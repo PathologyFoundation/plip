@@ -13,7 +13,7 @@ def get_cache_name(name: str, path: str):
 
     key = name+path
 
-    cache_folder = os.environ["CACHE_FOLDER"]
+    cache_folder = os.environ["PC_CACHE_FOLDER"]
     m = hashlib.sha256()
     m.update(key)
 
@@ -34,7 +34,7 @@ def cache_hit_or_miss(name: str, path: str):
 def cache_numpy_object(npa, name, path):
     key = name+path
 
-    cache_folder = os.environ["CACHE_FOLDER"]
+    cache_folder = os.environ["PC_CACHE_FOLDER"]
     m = hashlib.sha256()
     m.update(key)
 

@@ -4,6 +4,9 @@ import clip
 
 
 class EmbedderFactory:
+
+    def __init__(self):
+        pass
     
     def factory(self, name, path):
         if name == "plip":
