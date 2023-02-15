@@ -13,7 +13,7 @@ class LinearProber:
     def train_and_test(self, train_x: List, train_y: List, test_x: List, test_y: List):
         classifier = SGDClassifier(random_state=self.seed, loss="log_loss",
                                    alpha=self.alpha, verbose=0,
-                                   penalty="l2", max_iter=10000)
+                                   penalty="l2", max_iter=10000, class_weight="balanced")
 
         le = LabelEncoder()
 
