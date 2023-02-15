@@ -1,5 +1,7 @@
 import sys
 sys.path.append("../")
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
 from embedders.factory import EmbedderFactory
 from evaluation.linear_probing.linear_classifier import LinearProber
