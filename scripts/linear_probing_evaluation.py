@@ -12,7 +12,9 @@ import os
 def config():
     load_dotenv("../config.env")
 
-    DEFAULT_BACKBONE = "/oak/stanford/groups/jamesz/fede/medical_clip/novel_models_for_path/epoch_3_2023-01-30 14:57:58.402744_prime_bracket_4833.pt"
+    DEFAULT_BACKBONE = os.environ["PC_DEFAULT_BACKBONE"]
+
+    #DEFAULT_BACKBONE = "/oak/stanford/groups/jamesz/fede/medical_clip/novel_models_for_path/epoch_3_2023-01-30 14:57:58.402744_prime_bracket_4833.pt"
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default="plip", type=str)
