@@ -2,7 +2,7 @@ import clip
 import tqdm
 import numpy as np
 import torch
-from internal_datasets import *
+from embedders.internal_datasets import *
 from torch.utils.data import DataLoader
 from utils.cacher import cache_hit_or_miss, cache_numpy_object
 
