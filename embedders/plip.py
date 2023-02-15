@@ -14,24 +14,24 @@ class CLIPEmbedder:
         self.name = name
         self.backbone = backbone
 
-    def image_embedder(self, list_of_images, device="cuda", num_workers=1, batch_size=32):
-        hit_or_miss = cache_hit_or_miss(self.name + "img", self.backbone)
+    def image_embedder(self, list_of_images, device="cuda", num_workers=1, batch_size=32, additional_cache_name=""):
+        hit_or_miss = cache_hit_or_miss(self.name + "img" + additional_cache_name, self.backbone)
 
         if hit_or_miss:
             return hit_or_miss
         else:
             hit = self.embed_images(list_of_images, device=device, num_workers=num_workers, batch_size=batch_size)
-            cache_numpy_object(hit, self.name + "img", self.backbone)
+            cache_numpy_object(hit, self.name + "img" + additional_cache_name, self.backbone)
             return hit
 
-    def text_embedder(self, list_of_labels, device="cuda", num_workers=1, batch_size=32):
-        hit_or_miss = cache_hit_or_miss(self.name + "txt", self.backbone)
+    def text_embedder(self, list_of_labels, device="cuda", num_workers=1, batch_size=32, additional_cache_name=""):
+        hit_or_miss = cache_hit_or_miss(self.name + "txt" + additional_cache_name, self.backbone)
 
         if hit_or_miss:
             return hit_or_miss
         else:
             hit = self.embed_text(list_of_labels, device=device, num_workers=num_workers, batch_size=batch_size)
-            cache_numpy_object(hit, self.name + "txt", self.backbone)
+            cache_numpy_object(hit, self.name + "txt" + additional_cache_name, self.backbone)
             return hit
 
     def embed_images(self, list_of_images, device="cuda", num_workers=1, batch_size=32):
