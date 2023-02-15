@@ -20,8 +20,9 @@ class LinearProber:
         train_y = le.fit_transform(train_y)
         test_y = le.transform(test_y)
 
-        train_y = np.array(train_y).reshape(-1, 1)
-        test_y = np.array(test_y).reshape(-1, 1)
+        train_y = np.array(train_y)
+        test_y = np.array(test_y)
+
         classifier.fit(train_x, train_y)
         test_pred = classifier.predict(test_x)
         train_pred = classifier.predict(train_x)
