@@ -26,8 +26,8 @@ class LinearProber:
         test_pred = classifier.predict(test_x)
         train_pred = classifier.predict(train_x)
 
-        test_metrics = eval_metrics(test_x, test_pred)
-        train_metrics = eval_metrics(test_y, train_pred)
+        test_metrics = eval_metrics(test_y, test_pred)
+        train_metrics = eval_metrics(train_y, train_pred)
 
         return train_metrics, test_metrics
 
