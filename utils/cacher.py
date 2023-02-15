@@ -15,7 +15,7 @@ def get_cache_name(name: str, path: str):
 
     cache_folder = os.environ["PC_CACHE_FOLDER"]
     m = hashlib.sha256()
-    m.update(key)
+    m.update(key.encode('utf-8'))
 
     save_path = os.path.join(cache_folder, m.hexdigest())
 
@@ -36,7 +36,7 @@ def cache_numpy_object(npa, name, path):
 
     cache_folder = os.environ["PC_CACHE_FOLDER"]
     m = hashlib.sha256()
-    m.update(key)
+    m.update(key.encode('utf-8'))
 
     save_path = os.path.join(cache_folder, m.hexdigest())
 
