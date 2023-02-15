@@ -3,12 +3,15 @@ from metrics import eval_metrics
 import numpy as np
 from typing import List
 from sklearn.preprocessing import LabelEncoder
+import logging
 
 class LinearProber:
 
     def __init__(self, alpha, seed=7):
         self.alpha = alpha
         self.seed = seed
+
+    logging.info("LinearProber running")
 
     def train_and_test(self, train_x: List, train_y: List, test_x: List, test_y: List):
         classifier = SGDClassifier(random_state=self.seed, loss="log_loss",
@@ -32,5 +35,8 @@ class LinearProber:
         print(train_metrics)
         print()
         print(test_metrics)
+        logging.info(f"LinearProber Results on Test")
+        logging.info(str(test_metrics))
+
         return train_metrics, test_metrics
 

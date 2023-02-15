@@ -59,3 +59,4 @@ if __name__ == "__main__":
 
     rs = ResultsHandler(args.dataset, "linear_probing", additional_parameters)
     rs.add(results)
+
