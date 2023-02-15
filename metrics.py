@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.metrics import auc, roc_curve, f1_score, recall_score, precision_score, matthews_corrcoef, accuracy_score
 
 def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
+    assert len(y_true) == len(y_pred)
     if y_pred_proba is None:
         auroc = np.nan
     else:
@@ -46,5 +47,6 @@ def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
                    'specificity': specificity,
                    'ppv': ppv,
                    'npv': npv,
-                   'hitrate': hitrate}
+                   'hitrate': hitrate,
+                   'instances' : len(y_true)}
     return performance
