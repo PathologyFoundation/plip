@@ -28,6 +28,8 @@ class LinearProber:
 
         test_metrics = eval_metrics(test_y, test_pred)
         train_metrics = eval_metrics(train_y, train_pred)
-
+        print(train_metrics)
+        print()
+        print(test_metrics)
         return train_metrics, test_metrics
 
