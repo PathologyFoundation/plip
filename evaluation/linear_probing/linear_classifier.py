@@ -2,6 +2,7 @@ from sklearn.linear_model import SGDClassifier
 from metrics import eval_metrics
 import numpy as np
 from typing import List
+from sklearn.preprocessing import LabelEncoder
 
 class LinearProber:
 
@@ -13,6 +14,11 @@ class LinearProber:
         classifier = SGDClassifier(random_state=self.seed, loss="log_loss",
                                    alpha=self.alpha, verbose=0,
                                    penalty="l2", max_iter=10000)
+
+        le = LabelEncoder()
+
+        train_y = le.fit_transform(train_y)
+        test_y = le.transform(test_y)
 
         train_y = np.array(train_y).reshape(-1, 1)
         test_y = np.array(test_y).reshape(-1, 1)
