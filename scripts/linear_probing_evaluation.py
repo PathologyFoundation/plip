@@ -1,3 +1,5 @@
+import sys,os
+sys.path.append("../")
 import argparse
 from embedders.factory import EmbedderFactory
 from evaluation.linear_probing.linear_classifier import LinearProber

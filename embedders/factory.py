@@ -1,4 +1,4 @@
-from plip import CLIPEmbedder
+from embedders.plip import CLIPEmbedder
 import torch
 import clip
 
