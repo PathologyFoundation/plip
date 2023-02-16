@@ -50,7 +50,8 @@ if __name__ == "__main__":
 
     prober = ZeroShotClassifier()
 
-    results = prober.zero_shot_classification(test_x, test_y, labels=labels)
+    results = prober.zero_shot_classification(test_x, test_y,
+                                              unique_labels=labels, target_labels=test_dataset["labels"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,
                              'model': args.model_name, 'backbone': args.backbone,}
