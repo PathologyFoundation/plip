@@ -1,9 +1,8 @@
-from embedders.plip import CLIPEmbedder
 import torch
 import clip
-from mudipath import build_densenet
+from embedders.mudipath import build_densenet
 from torchvision import transforms
-from mudipath import DenseNetEmbedder
+from embedders.mudipath import DenseNetEmbedder
 
 class EmbedderFactory:
 
