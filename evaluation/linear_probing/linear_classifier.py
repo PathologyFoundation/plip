@@ -32,11 +32,14 @@ class LinearProber:
 
         test_metrics = eval_metrics(test_y, test_pred)
         train_metrics = eval_metrics(train_y, train_pred)
+        test_metrics["split"] = "test"
+        train_metrics["split"] = "train"
+
         print(train_metrics)
         print()
         print(test_metrics)
         logging.info(f"LinearProber Results on Test")
         logging.info(str(test_metrics))
 
-        return test_metrics
+        return test_metrics, train_metrics
 
