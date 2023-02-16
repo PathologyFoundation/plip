@@ -38,5 +38,5 @@ class LinearProber:
         logging.info(f"LinearProber Results on Test")
         logging.info(str(test_metrics))
 
-        return train_metrics, test_metrics
+        return test_metrics
 

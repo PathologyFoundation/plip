@@ -3,16 +3,17 @@ sys.path.append("../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
+import logging
 from embedders.factory import EmbedderFactory
 from evaluation.linear_probing.linear_classifier import LinearProber
 import pandas as pd
 from dotenv import load_dotenv
 import os
 from utils.results_handler import ResultsHandler
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def config():
     load_dotenv("../config.env")
-
 
     #DEFAULT_BACKBONE = "/oak/stanford/groups/jamesz/fede/medical_clip/novel_models_for_path/epoch_3_2023-01-30 14:57:58.402744_prime_bracket_4833.pt"
 
