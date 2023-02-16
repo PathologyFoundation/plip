@@ -10,7 +10,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 from utils.results_handler import ResultsHandler
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def config():
     load_dotenv("../config.env")
