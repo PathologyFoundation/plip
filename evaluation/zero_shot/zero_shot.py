@@ -17,11 +17,11 @@ class ZeroShotClassifier:
         train_metrics = eval_metrics(predictions, target_labels)
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
-
-        print(train_metrics)
         print()
+        print(train_metrics)
         print(test_metrics)
+        print()
         logging.info(f"ZeroShot Results on Test")
         logging.info(str(test_metrics))
 
-        return predictions
+        return train_metrics, test_metrics

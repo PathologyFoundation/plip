@@ -45,8 +45,12 @@ if __name__ == "__main__":
 
     embedder = EmbedderFactory().factory(args.model_name, args.backbone)
 
-    test_x = embedder.image_embedder(test_dataset["image"].tolist(), additional_cache_name=test_dataset_name)
+    test_x = embedder.image_embedder(test_dataset["image"].tolist(),
+                                     additional_cache_name=test_dataset_name)
+
     labels = test_dataset["label"].unique().tolist()
+
+    # embeddings are generated using the selected caption, not the labels
     test_y = embedder.text_embedder(test_dataset[args.caption_column].unique().tolist(),
                                     additional_cache_name=test_dataset_name)
 
@@ -56,7 +60,7 @@ if __name__ == "__main__":
                                               unique_labels=labels, target_labels=test_dataset["label"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,
-                             'model': args.model_name, 'backbone': args.backbone,}
+                             'model': args.model_name, 'backbone': args.backbone}
 
     rs = ResultsHandler(args.dataset, "zero_shot", additional_parameters)
     rs.add(results)
