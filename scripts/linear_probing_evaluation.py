@@ -46,13 +46,13 @@ if __name__ == "__main__":
 
     embedder = EmbedderFactory().factory(args.model_name, args.backbone)
 
-    train_x = embedder.image_embedder(train_dataset["images"].tolist(), additional_cache_name=train_dataset_name)
-    test_x = embedder.image_embedder(test_dataset["images"].tolist(), additional_cache_name=test_dataset_name)
+    train_x = embedder.image_embedder(train_dataset["image"].tolist(), additional_cache_name=train_dataset_name)
+    test_x = embedder.image_embedder(test_dataset["image"].tolist(), additional_cache_name=test_dataset_name)
 
     prober = LinearProber(alpha=args.alpha, seed=args.seed)
 
-    results = prober.train_and_test(train_x, train_y=train_dataset["labels"].tolist(),
-                                    test_x=test_x, test_y=test_dataset["labels"].tolist())
+    results = prober.train_and_test(train_x, train_y=train_dataset["label"].tolist(),
+                                    test_x=test_x, test_y=test_dataset["label"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,
                              'model': args.model_name, 'backbone': args.backbone,
