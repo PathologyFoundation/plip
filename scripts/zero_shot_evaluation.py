@@ -41,6 +41,7 @@ if __name__ == "__main__":
     test_dataset_name = args.dataset + "_test.csv"
 
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
+    test_dataset["labels"] = test_dataset["labels"].apply(lambda x: f"An H&E image of {x}")
 
     embedder = EmbedderFactory().factory(args.model_name, args.backbone)
 
