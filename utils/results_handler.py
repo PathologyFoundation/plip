@@ -15,6 +15,9 @@ class ResultsHandler:
 
     def add(self, results):
 
+        if len(results) > 1:
+            results = (results, )
+
         for record in results:
             record.update(self.storing_params)
 

@@ -19,6 +19,7 @@ def config():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default="plip", type=str)
+    parser.add_argument("--caption_column", default="text_style_4", type=str)
     parser.add_argument("--backbone", default='default', type=str)
     parser.add_argument("--dataset", default="kather", type=str)
     parser.add_argument("--batch-size", default=128, type=int)
@@ -41,18 +42,18 @@ if __name__ == "__main__":
     test_dataset_name = args.dataset + "_test.csv"
 
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
-    test_dataset["labels"] = test_dataset["labels"].apply(lambda x: f"An H&E image of {x}")
 
     embedder = EmbedderFactory().factory(args.model_name, args.backbone)
 
-    test_x = embedder.image_embedder(test_dataset["images"].tolist(), additional_cache_name=test_dataset_name)
-    labels = test_dataset["labels"].unique().tolist()
-    test_y = embedder.text_embedder(labels, additional_cache_name=test_dataset_name)
+    test_x = embedder.image_embedder(test_dataset["image"].tolist(), additional_cache_name=test_dataset_name)
+    labels = test_dataset["label"].unique().tolist()
+    test_y = embedder.text_embedder(test_dataset[args.caption_column].unique().tolist(),
+                                    additional_cache_name=test_dataset_name)
 
     prober = ZeroShotClassifier()
 
     results = prober.zero_shot_classification(test_x, test_y,
-                                              unique_labels=labels, target_labels=test_dataset["labels"].tolist())
+                                              unique_labels=labels, target_labels=test_dataset["label"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,
                              'model': args.model_name, 'backbone': args.backbone,}
