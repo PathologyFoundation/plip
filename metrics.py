@@ -1,6 +1,21 @@
 import numpy as np
 from sklearn.metrics import auc, roc_curve, f1_score, recall_score, precision_score, matthews_corrcoef, accuracy_score
 
+
+def retrieval_metrics(y_target, y_predictions):
+    p_5 = 0
+    p_10 = 0
+
+    for t, predictions in zip(y_target, y_predictions):
+        if t in predictions[0:5]:
+            p_5 += 1
+        if t in predictions[0:10]:
+            p_10 += 1
+
+    return {"p@5": p_5/len(y_target), "p@10": p_10/len(y_target)}
+
+
+
 def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
     assert len(y_true) == len(y_pred)
     if y_pred_proba is None:

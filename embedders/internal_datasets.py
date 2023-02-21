@@ -1,6 +1,7 @@
-from PIL import Image
 from torch.utils.data import Dataset
-
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+Image.MAX_IMAGE_PIXELS = None
 
 class CLIPImageCaptioningDataset(Dataset):
     def __init__(self, df, preprocessing):
