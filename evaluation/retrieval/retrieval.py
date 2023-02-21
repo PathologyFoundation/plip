@@ -19,11 +19,15 @@ class ImateRetrieval:
 
             best_scores.append(best)
 
-        test_metrics = retrieval_metrics(list(range(0, len(image_embeddings))))
+        targets = list(range(0, len(image_embeddings)))
+
+        test_metrics = retrieval_metrics(targets, best_scores)
+        train_metrics = retrieval_metrics(targets, best_scores)
 
         test_metrics["split"] = "test"
+        train_metrics["split"] = "train"
 
         logging.info(f"Retrieval Results on Test")
         logging.info(str(test_metrics))
 
-        return test_metrics
+        return train_metrics, test_metrics
