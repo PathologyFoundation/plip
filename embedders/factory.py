@@ -15,11 +15,12 @@ class EmbedderFactory:
         if name == "plip":
             model, preprocess = clip.load("ViT-B/32", device=device)
             model.load_state_dict(torch.load(path))
+            model.eval()
             return CLIPEmbedder(model, preprocess, name, path)
 
         elif name == "clip":
             model, preprocess = clip.load("ViT-B/32", device=device)
-
+            model.eval()
             return CLIPEmbedder(model, preprocess, name, path)
 
         elif name == "mudipath":
