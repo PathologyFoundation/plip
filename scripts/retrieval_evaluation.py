@@ -5,7 +5,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
 import logging
 from embedders.factory import EmbedderFactory
-from evaluation.retrieval.retrieval import ImateRetrieval
+from evaluation.retrieval.retrieval import ImageRetrieval
 import pandas as pd
 from dotenv import load_dotenv
 import os
@@ -14,8 +14,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def config():
     load_dotenv("../config.env")
-
-    #DEFAULT_BACKBONE = "/oak/stanford/groups/jamesz/fede/medical_clip/novel_models_for_path/epoch_3_2023-01-30 14:57:58.402744_prime_bracket_4833.pt"
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default="plip", type=str)
@@ -50,7 +48,7 @@ if __name__ == "__main__":
     text_embeddings = embedder.text_embedder(test_dataset[args.caption_column].tolist(),
                                     additional_cache_name=test_dataset_name)
 
-    prober = ImateRetrieval()
+    prober = ImageRetrieval()
 
     results = prober.retrieval(image_embeddings, text_embeddings)
 

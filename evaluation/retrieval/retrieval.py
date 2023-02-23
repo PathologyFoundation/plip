@@ -3,7 +3,7 @@ from embedders.abst import AbstractEmbedder
 from metrics import retrieval_metrics
 import logging
 
-class ImateRetrieval:
+class ImageRetrieval:
 
     def __init__(self):
         pass
