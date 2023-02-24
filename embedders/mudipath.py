@@ -2,7 +2,7 @@ import os
 import re
 import sys
 from abc import abstractmethod
-from utils.cacher import cache_hit_or_miss, cache_numpy_object
+from utils.cacher import cache_hit_or_miss, cache_numpy_object, cache_hit_or_miss_raw_filename, cache_numpy_object_raw_filename
 from embedders.internal_datasets import CLIPImageDataset
 from torch.utils.data import DataLoader
 from torch.utils import model_zoo
@@ -192,13 +192,17 @@ class DenseNetEmbedder:
         self.backbone = backbone
 
     def image_embedder(self, list_of_images, device="cuda", num_workers=1, batch_size=32, additional_cache_name=""):
-        hit_or_miss = cache_hit_or_miss(self.name + "img" + additional_cache_name, self.backbone)
+        # name: model name (e.g., plip, clip, mudipath)
+        # additional_cache_name: name of the validation dataset (e.g., Kather_7K)
+        #hit_or_miss = cache_hit_or_miss(self.name + "img" + additional_cache_name, self.backbone)
+        hit_or_miss = cache_hit_or_miss_raw_filename(self.name + "img" + additional_cache_name, self.backbone)
 
         if hit_or_miss is not None:
             return hit_or_miss
         else:
             hit = self.embed_images(list_of_images, device=device, num_workers=num_workers, batch_size=batch_size)
-            cache_numpy_object(hit, self.name + "img" + additional_cache_name, self.backbone)
+            #cache_numpy_object(hit, self.name + "img" + additional_cache_name, self.backbone)
+            cache_numpy_object_raw_filename(hit, self.name + "img" + additional_cache_name, self.backbone)
             return hit
 
     def embed_images(self, list_of_images, device="cuda", num_workers=1, batch_size=32):
