@@ -17,7 +17,7 @@ class LinearProber:
         classifier = SGDClassifier(random_state=self.seed, loss="log_loss",
                                    alpha=self.alpha, verbose=0,
                                    penalty="l2", max_iter=10000, class_weight="balanced")
-
+        
         le = LabelEncoder()
 
         train_y = le.fit_transform(train_y)

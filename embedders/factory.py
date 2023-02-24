@@ -10,11 +10,18 @@ class EmbedderFactory:
     def __init__(self):
         pass
     
-    def factory(self, name, path):
+    def factory(self, args):
+        name = args.model_name
+        path = args.backbone
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
         if name == "plip":
             model, preprocess = clip.load("ViT-B/32", device=device)
-            model.load_state_dict(torch.load(path))
+            if device == 'cuda':
+                model.load_state_dict(torch.load(path))
+            elif device == 'cpu':
+                model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
+                
             model.eval()
             return CLIPEmbedder(model, preprocess, name, path)
 
