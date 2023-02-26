@@ -9,6 +9,7 @@ from evaluation.linear_probing.linear_classifier import LinearProber
 import pandas as pd
 from dotenv import load_dotenv
 import os
+import numpy as np
 from utils.results_handler import ResultsHandler
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -33,6 +34,9 @@ def config():
 if __name__ == "__main__":
 
     args = config()
+
+    np.random.seed(args.seed)
+
     data_folder = os.environ["PC_EVALUATION_DATA_ROOT_FOLDER"]
 
     if args.model_name == "plip" and args.backbone == "default":

@@ -3,6 +3,7 @@ sys.path.append("../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
+import numpy as np
 import logging
 from embedders.factory import EmbedderFactory
 from evaluation.zero_shot.zero_shot import ZeroShotClassifier
@@ -33,7 +34,11 @@ def config():
 
 if __name__ == "__main__":
 
+
     args = config()
+
+    np.random.seed(args.seed)
+
     data_folder = os.environ["PC_EVALUATION_DATA_ROOT_FOLDER"]
 
     if args.model_name == "plip" and args.backbone == "default":
