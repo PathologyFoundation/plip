@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # below are new codes
     ###############################################################
     opj = os.path.join
-    savedir = opj(os.environ["PC_RESULTS_FOLDER"], args.dataset, args.model_name, str(args.alpha))
+    savedir = opj(os.environ["PC_RESULTS_FOLDER"], args.dataset, args.model_name, str(args.alpha), str(args.seed))
     os.makedirs(savedir, exist_ok=True)
     backbone = args.backbone
     if args.model_name == 'plip':
