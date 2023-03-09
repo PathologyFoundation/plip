@@ -4,6 +4,7 @@ from embedders.plip import CLIPEmbedder
 from embedders.mudipath import build_densenet
 from torchvision import transforms
 from embedders.mudipath import DenseNetEmbedder
+import os
 
 class EmbedderFactory:
 
@@ -16,7 +17,7 @@ class EmbedderFactory:
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         if name == "plip":
-            model, preprocess = clip.load("ViT-B/32", device=device)
+            model, preprocess = clip.load(os.environ["PC_CLIP_ARCH"], device=device)
             if device == 'cuda':
                 model.load_state_dict(torch.load(path))
             elif device == 'cpu':
