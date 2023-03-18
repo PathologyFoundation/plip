@@ -53,9 +53,9 @@ if __name__ == "__main__":
     train_dataset = pd.read_csv(os.path.join(data_folder, train_dataset_name))
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
 
-    embedder = EmbedderFactory().factory(args) # change to args to parse additional configuration into CLIPEmbedder and DenseNetEmbedder
+    embedder = EmbedderFactory().factory(args)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu" # enable CPU feedforward
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     train_x = embedder.image_embedder(train_dataset["image"].tolist(), additional_cache_name=train_dataset_name, device=device)
     test_x = embedder.image_embedder(test_dataset["image"].tolist(), additional_cache_name=test_dataset_name, device=device)
 
@@ -71,7 +71,6 @@ if __name__ == "__main__":
     rs = ResultsHandler(args.dataset, "linear_probing", additional_parameters)
     rs.add(results)
 
-
     ###############################################################
     # below are new codes
     ###############################################################
@@ -82,6 +81,7 @@ if __name__ == "__main__":
 
     if args.model_name == 'plip':
         backbone = os.path.basename(backbone)
+
     save_filename = opj(savedir, '%s.csv' % backbone)
 
     train_perf, test_perf = results
