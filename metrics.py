@@ -3,16 +3,16 @@ from sklearn.metrics import auc, roc_curve, f1_score, recall_score, precision_sc
 
 
 def retrieval_metrics(y_target, y_predictions):
-    p_5 = 0
     p_10 = 0
+    p_50 = 0
 
     for t, predictions in zip(y_target, y_predictions):
-        if t in predictions[0:5]:
-            p_5 += 1
-        if t in predictions[0:10]:
+        if t in predictions[:10]:
             p_10 += 1
+        if t in predictions[:50]:
+            p_50 += 1
 
-    return {"p@5": p_5/len(y_target), "p@10": p_10/len(y_target)}
+    return {"p@10": p_10/len(y_target), "p@50": p_50/len(y_target)}
 
 
 

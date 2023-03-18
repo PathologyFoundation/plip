@@ -1,5 +1,3 @@
-import numpy as np
-from embedders.abst import AbstractEmbedder
 from metrics import retrieval_metrics
 import logging
 
@@ -15,7 +13,7 @@ class ImageRetrieval:
         for t in text_embeddings:
             arr = t.dot(image_embeddings.T)
 
-            best = arr.argsort()[-10:][::-1]
+            best = arr.argsort()[-50:][::-1]
 
             best_scores.append(best)
 
