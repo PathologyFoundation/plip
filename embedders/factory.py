@@ -27,7 +27,7 @@ class EmbedderFactory:
             return CLIPEmbedder(model, preprocess, name, path)
 
         elif name == "clip":
-            model, preprocess = clip.load("ViT-B/32", device=device)
+            model, preprocess = clip.load(os.environ["PC_CLIP_ARCH"], device=device)
             model.eval()
             return CLIPEmbedder(model, preprocess, name, path)
 
