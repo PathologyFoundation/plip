@@ -8,6 +8,10 @@ PC_DEFAULT_BACKBONE: this should point at the backbone to use as default for PLI
 PC_CLIP_ARCH: this is the architecture for PLIP and BLIP (e.g., "ViT-B/32")
 ```
 
+## Evaluation Scripts
+
+All evaluation scripts are found in `path_eval/scripts`. They use the abstractions found in `path_eval/evaluation`
+
 ## Dataset Details
 
 ### Data Location

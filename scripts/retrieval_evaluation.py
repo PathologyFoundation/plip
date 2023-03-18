@@ -22,8 +22,6 @@ def config():
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--seed", default=1, type=int)
 
-    ## Probe hparams
-    parser.add_argument("--alpha", default=0.01, type=float)
     return parser.parse_args()
 
 
