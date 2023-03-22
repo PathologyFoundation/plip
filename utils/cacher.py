@@ -18,7 +18,6 @@ def get_cache_name(name: str, path: str):
     m.update(key.encode('utf-8'))
 
     save_path = os.path.join(cache_folder, m.hexdigest())
-    print()
 
     return save_path
 
@@ -62,7 +61,7 @@ def get_savepath(name, path):
 def cache_hit_or_miss_raw_filename(name: str, path: str):
     save_path = get_savepath(name, path)
     if os.path.exists(save_path):
-        print('[CACHE] Found existed embedding.')
+        print(f'[CACHE] Found existed embedding. Name: {name}, Path: {path}, Save path: {save_path}')
         return np.load(save_path)
     else:
         print('[CACHE] No existed embedding found. Need to generate embedding first.')
@@ -70,5 +69,6 @@ def cache_hit_or_miss_raw_filename(name: str, path: str):
 
 def cache_numpy_object_raw_filename(npa, name, path):
     save_path = get_savepath(name, path)
+    print(f"[CACHE] Saving embedding. Name: {name}, Path: {path}, Save path: {save_path}")
     with open(f"{save_path}", 'wb') as f:
         np.save(f, npa)

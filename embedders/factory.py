@@ -6,6 +6,7 @@ from torchvision import transforms
 from embedders.mudipath import DenseNetEmbedder
 import os
 
+
 class EmbedderFactory:
 
     def __init__(self):

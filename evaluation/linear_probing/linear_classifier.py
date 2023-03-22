@@ -35,12 +35,7 @@ class LinearProber:
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
 
-        print()
-        print(train_metrics)
-        print(test_metrics)
-        print()
-        logging.info(f"LinearProber Results on Test")
-        logging.info(str(test_metrics))
+        logging.info(f"LinearProber Done")
 
         return test_metrics, train_metrics
 

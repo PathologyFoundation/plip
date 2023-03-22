@@ -25,7 +25,6 @@ class ImageRetrieval:
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
 
-        logging.info(f"Retrieval Results on Test")
-        logging.info(str(test_metrics))
+        logging.info(f"Retrieval Done")
 
         return train_metrics, test_metrics
