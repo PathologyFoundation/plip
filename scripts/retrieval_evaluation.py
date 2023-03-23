@@ -17,7 +17,7 @@ def config():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default="plip", type=str)
-    parser.add_argument("--caption_column", default="caption", type=str)
+    parser.add_argument("--caption_column", default="captions", type=str)
     parser.add_argument("--backbone", default='default', type=str)
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--seed", default=1, type=int)
@@ -33,13 +33,13 @@ if __name__ == "__main__":
     if args.model_name == "plip" and args.backbone == "default":
         args.backbone = os.environ["PC_DEFAULT_BACKBONE"]
 
-    test_dataset_name = args.dataset + "_test.csv"
+    test_dataset_name = args.dataset + "_retrieval.csv"
 
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
 
     embedder = EmbedderFactory().factory(args)
 
-    image_embeddings = embedder.image_embedder(test_dataset["image"].tolist(),
+    image_embeddings = embedder.image_embedder(test_dataset["images"].tolist(),
                                      additional_cache_name=test_dataset_name)
 
     # embeddings are generated using the selected caption, not the labels
