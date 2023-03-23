@@ -33,9 +33,9 @@ if __name__ == "__main__":
     if args.model_name == "plip" and args.backbone == "default":
         args.backbone = os.environ["PC_DEFAULT_BACKBONE"]
 
-    test_dataset_name = args.dataset + "_retrieval.csv"
+    test_dataset_name = args.dataset + "_retrieval.tsv"
 
-    test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
+    test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name), sep='\t')
 
     embedder = EmbedderFactory().factory(args)
 
