@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
 
-    embedder = EmbedderFactory().factory(args.model_name)
+    embedder = EmbedderFactory().factory(args)
 
     test_x = embedder.image_embedder(test_dataset["image"].tolist(),
                                      additional_cache_name=test_dataset_name)
