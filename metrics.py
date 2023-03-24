@@ -24,6 +24,7 @@ def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
         fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
         auroc = auc(fpr, tpr)
     f1 = f1_score(y_true, y_pred, average = average_method)
+    wf1 = f1_score(y_true, y_pred, average = "weighted")
     precision = precision_score(y_true, y_pred, average = average_method)
     recall = recall_score(y_true, y_pred, average = average_method)
     mcc = matthews_corrcoef(y_true, y_pred)
@@ -51,6 +52,7 @@ def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
     performance = {'Accuracy': acc,
                    'AUC': auroc,
                    'F1': f1,
+                   'WF1': wf1,
                    'precision': precision,
                    'recall': recall,
                    'mcc': mcc,
