@@ -8,6 +8,7 @@ import logging
 from embedders.factory import EmbedderFactory
 from evaluation.zero_shot.zero_shot import ZeroShotClassifier
 import pandas as pd
+
 from dotenv import load_dotenv
 import os
 from utils.results_handler import ResultsHandler

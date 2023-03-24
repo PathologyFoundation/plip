@@ -19,6 +19,11 @@ class ZeroShotClassifier:
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
 
+        import pickle
+        with open("pickle.pkl", "wb") as f:
+            pickle.dump({"target" : target_labels,
+                         "predictions" : predictions}, f)
+        exit()
         logging.info(f"ZeroShot Done")
 
         return train_metrics, test_metrics
