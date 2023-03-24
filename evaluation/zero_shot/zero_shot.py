@@ -11,7 +11,6 @@ class ZeroShotClassifier:
     def zero_shot_classification(self, image_embeddings, text_embeddings, unique_labels, target_labels):
 
         score = image_embeddings.dot(text_embeddings.T)
-        print(image_embeddings[0][0:10])
         predictions = [unique_labels[np.argmax(i)] for i in score]
 
         test_metrics = eval_metrics(predictions, target_labels)

@@ -25,8 +25,7 @@ class EmbedderFactory:
                 model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
                 
             model.eval()
-            for param in model.parameters():
-                print(param.data)
+
             return CLIPEmbedder(model, preprocess, name, path)
 
         elif name == "clip":

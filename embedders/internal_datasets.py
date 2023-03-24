@@ -40,4 +40,7 @@ class CLIPImageDataset(Dataset):
 
     def __getitem__(self, idx):
         images = self.preprocessing(Image.open(self.images[idx]))  # preprocess from clip.load
+        print(images[0])
+        exit()
+
         return images
