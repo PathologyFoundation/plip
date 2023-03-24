@@ -16,7 +16,7 @@ def retrieval_metrics(y_target, y_predictions):
 
 
 
-def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='macro'):
+def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='weighted'):
     assert len(y_true) == len(y_pred)
     if y_pred_proba is None:
         auroc = np.nan
