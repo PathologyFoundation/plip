@@ -45,7 +45,7 @@ if __name__ == "__main__":
     test_dataset_name = args.dataset + "_test.csv"
 
     test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
-    print(np.array(Image.open(test_dataset["image"].tolist()[0])))
+    print("Pixels", np.array(Image.open(test_dataset["image"].tolist()[0])))
     embedder = EmbedderFactory().factory(args)
 
     test_x = embedder.image_embedder(test_dataset["image"].tolist(),
