@@ -50,7 +50,8 @@ if __name__ == "__main__":
 
     test_x = embedder.image_embedder(test_dataset["image"].tolist(),
                                      additional_cache_name=test_dataset_name, batch_size=512)
-
+    print(test_x[0][0:10])
+    exit()
     labels = test_dataset["label"].unique().tolist()
 
     # embeddings are generated using the selected caption, not the labels
