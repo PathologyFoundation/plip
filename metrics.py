@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import auc, roc_curve, f1_score, recall_score, precision_score, matthews_corrcoef, accuracy_score
+from sklearn.metrics import auc, roc_curve, f1_score, recall_score, precision_score, matthews_corrcoef, accuracy_score, classification_report
 
 
 def retrieval_metrics(y_target, y_predictions):
@@ -24,6 +24,7 @@ def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='weighted')
         fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
         auroc = auc(fpr, tpr)
     f1 = f1_score(y_true, y_pred, average = average_method)
+    print(classification_report(y_true, y_pred))
     precision = precision_score(y_true, y_pred, average = average_method)
     recall = recall_score(y_true, y_pred, average = average_method)
     mcc = matthews_corrcoef(y_true, y_pred)
