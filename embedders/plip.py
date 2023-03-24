@@ -37,7 +37,6 @@ class CLIPEmbedder:
     def embed_images(self, list_of_images, device="cuda", num_workers=1, batch_size=32):
         train_dataset = CLIPImageDataset(list_of_images, self.preprocess)
         dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-        tens = CLIPImageDataset(list_of_images, self.preprocess)[0].cuda().unsqueeze(dim=0)
         image_embeddings = []
 
         total = len(list_of_images) // batch_size

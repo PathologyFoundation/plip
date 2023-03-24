@@ -13,8 +13,9 @@ class ZeroShotClassifier:
         score = image_embeddings.dot(text_embeddings.T)
         predictions = [unique_labels[np.argmax(i)] for i in score]
 
-        test_metrics = eval_metrics(predictions, target_labels)
-        train_metrics = eval_metrics(predictions, target_labels)
+
+        test_metrics = eval_metrics(target_labels, predictions)
+        train_metrics = eval_metrics(target_labels, predictions)
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
 
