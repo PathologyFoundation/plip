@@ -49,13 +49,13 @@ if __name__ == "__main__":
     embedder = EmbedderFactory().factory(args)
 
     test_x = embedder.image_embedder(test_dataset["image"].tolist(),
-                                     additional_cache_name=test_dataset_name)
+                                     additional_cache_name=test_dataset_name, batch_size=512)
 
     labels = test_dataset["label"].unique().tolist()
 
     # embeddings are generated using the selected caption, not the labels
     test_y = embedder.text_embedder(test_dataset[args.caption_column].unique().tolist(),
-                                    additional_cache_name=test_dataset_name)
+                                    additional_cache_name=test_dataset_name, batch_size=512)
 
     prober = ZeroShotClassifier()
 
