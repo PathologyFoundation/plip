@@ -13,7 +13,7 @@ class CLIPImageCaptioningDataset(Dataset):
         return len(self.caption)
 
     def __getitem__(self, idx):
-        images = self.preprocessing(Image.open(self.images[idx]))  # preprocess from clip.load
+        images = self.preprocessing(Image.open(self.images[idx]).convert('RGB'))  # preprocess from clip.load
         caption = self.caption[idx]
         return images, caption
 
@@ -39,6 +39,5 @@ class CLIPImageDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        images = self.preprocessing(Image.open(self.images[idx]))  # preprocess from clip.load
-
+        images = self.preprocessing(Image.open(self.images[idx]).convert('RGB'))  # preprocess from clip.load
         return images

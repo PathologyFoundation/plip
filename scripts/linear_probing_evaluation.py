@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     prober = LinearProber(alpha=args.alpha, seed=args.seed)
 
-    results = prober.train_and_test(train_x, train_y=train_dataset["label"].tolist(),
+    results = prober.train_and_test(train_x=train_x, train_y=train_dataset["label"].tolist(),
                                     test_x=test_x, test_y=test_dataset["label"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # below are new codes
     ###############################################################
     opj = os.path.join
-    savedir = opj(os.environ["PC_RESULTS_FOLDER"], args.dataset, args.model_name, str(args.alpha), str(args.seed))
+    savedir = opj(os.environ["PC_RESULTS_FOLDER"], args.dataset, args.model_name, 'seed=%d' % args.seed, 'alpha=' + str(args.alpha))
     os.makedirs(savedir, exist_ok=True)
     backbone = args.backbone
 

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from embedders.internal_datasets import *
 from torch.utils.data import DataLoader
-from utils.cacher import cache_hit_or_miss, cache_numpy_object
+from utils.cacher import cache_hit_or_miss, cache_numpy_object, cache_hit_or_miss_raw_filename, cache_numpy_object_raw_filename
 
 class CLIPEmbedder:
 
@@ -13,15 +13,15 @@ class CLIPEmbedder:
         self.preprocess = preprocess
         self.name = name
         self.backbone = backbone
-
+        
     def image_embedder(self, list_of_images, device="cuda", num_workers=1, batch_size=32, additional_cache_name=""):
-        hit_or_miss = cache_hit_or_miss(self.name + "img" + additional_cache_name, self.backbone)
+        hit_or_miss = cache_hit_or_miss_raw_filename(self.name + "img" + additional_cache_name, self.backbone)
 
         if hit_or_miss is not None:
             return hit_or_miss
         else:
             hit = self.embed_images(list_of_images, device=device, num_workers=num_workers, batch_size=batch_size)
-            cache_numpy_object(hit, self.name + "img" + additional_cache_name, self.backbone)
+            cache_numpy_object_raw_filename(hit, self.name + "img" + additional_cache_name, self.backbone)
             return hit
 
     def text_embedder(self, list_of_labels, device="cuda", num_workers=1, batch_size=32, additional_cache_name=""):
@@ -37,6 +37,7 @@ class CLIPEmbedder:
     def embed_images(self, list_of_images, device="cuda", num_workers=1, batch_size=32):
         train_dataset = CLIPImageDataset(list_of_images, self.preprocess)
         dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
+
         image_embeddings = []
 
         total = len(list_of_images) // batch_size
@@ -44,9 +45,7 @@ class CLIPEmbedder:
         with torch.no_grad():
             for images in dataloader:
                 images = images.to(device)
-
                 image_embeddings.extend(self.model.encode_image(images).detach().cpu().numpy())
-
                 pbar.update(1)
             pbar.close()
 
@@ -57,8 +56,6 @@ class CLIPEmbedder:
     def embed_text(self, list_of_labels, device="cuda", num_workers=1, batch_size=32):
         train_dataset = CLIPCaptioningDataset(list_of_labels)
         dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-
-
         text_embeddings = []
         total = len(list_of_labels) // batch_size
 

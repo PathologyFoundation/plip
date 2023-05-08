@@ -51,7 +51,7 @@ def get_savepath(name, path):
     modelname, dataset_name = name.split('img')
     dataset_name = dataset_name.split('.csv')[0]
     cache_folder = os.environ["PC_CACHE_FOLDER"]
-    cache_subfolder_data = os.path.join(cache_folder, dataset_name)
+    cache_subfolder_data = os.path.join(cache_folder, dataset_name, modelname)
     os.makedirs(cache_subfolder_data, exist_ok=True)
     if modelname == 'plip':
         path = os.path.basename(path)
@@ -61,7 +61,7 @@ def get_savepath(name, path):
 def cache_hit_or_miss_raw_filename(name: str, path: str):
     save_path = get_savepath(name, path)
     if os.path.exists(save_path):
-        print(f'[CACHE] Found existed embedding. Name: {name}, Path: {path}, Save path: {save_path}')
+        print('[CACHE] Found existed embedding.')
         return np.load(save_path)
     else:
         print('[CACHE] No existed embedding found. Need to generate embedding first.')

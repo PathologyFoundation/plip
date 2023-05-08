@@ -34,7 +34,7 @@ class EmbedderFactory:
             return CLIPEmbedder(model, preprocess, name, path)
 
         elif name == "mudipath":
-            backbone = build_densenet(download_dir="/oak/stanford/groups/jamesz/fede/medical_clip/pathology_notebooks/",
+            backbone = build_densenet(download_dir="/oak/stanford/groups/jamesz/pathtweets/models/",
                                       pretrained="mtdp")  # TODO fixed path
             backbone.num_feats = backbone.n_features()
             backbone.forward_type = "image"
