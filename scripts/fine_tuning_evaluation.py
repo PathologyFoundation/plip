@@ -14,7 +14,7 @@ import os
 opj = os.path.join
 import numpy as np
 from utils.results_handler import ResultsHandler
-from training_model.clip import CLIPTuner
+from fine_tuning.clip import CLIPTuner
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def config():
