@@ -138,12 +138,12 @@ if __name__ == "__main__":
     
     TIMESTRING  = time.strftime("%Y%m%d-%H.%M.%S", time.localtime())
     if args.model_name == 'plip':
-        savesubdir = f'PLIP_{TIMESTRING}_data={args.dataset}_btch={args.batch_size}_'+\
+        savesubdir = f'PLIP_data={args.dataset}_btch={args.batch_size}_'+\
                         f'wd={args.weight_decay}_firstresize={args.first_resize}_pxsize={args.pxsize}_nepochs={args.epochs}_'+\
                         f'validratio={args.valid_ratio}_optimizer={args.optimizer}'
     else:
-        savesubdir = f'{args.model_name}_{TIMESTRING}'
-    args.save_directory = opj(args.save_directory, args.dataset, f'train_ratio={args.percentage_of_training_data}', savesubdir, f'random_seed={args.random_seed}')
+        savesubdir = f'{args.model_name}'
+    args.save_directory = opj(args.save_directory, args.dataset, f'train_ratio={args.percentage_of_training_data}', savesubdir, f'random_seed={args.random_seed}_{TIMESTRING}')
     os.makedirs(args.save_directory, exist_ok=True)
     
     args_df = pd.DataFrame(vars(args),index=['Value']).T
@@ -176,12 +176,13 @@ if __name__ == "__main__":
         args.learning_rate = lr
         if args.model_name in ["clip", "plip"]:
             performance = tune_clip(args, train, valid, logging)
-            performance['learning_rate'] = lr
+            performance['learning_rate'] = args.learning_rate
             all_performance = pd.concat([all_performance, performance], axis=0).reset_index(drop=True)
         elif args.model_name == 'EfficientNet':
             pass
             
     print(all_performance)
+    all_performance.to_csv(opj(args.save_directory, f'performance_val.csv'))
     # Evaluate at max epoch:
     perf_maxepoch = all_performance.loc[all_performance['epoch'] == args.epochs]
     best_lr = perf_maxepoch['learning_rate'][perf_maxepoch['f1_weighted'].idxmax()]
@@ -197,7 +198,9 @@ if __name__ == "__main__":
 
     if args.model_name in ["clip", "plip"]:
         performance_test = tune_clip(args, train_dataset, test_dataset, logging)
+        performance_test['learning_rate'] = args.learning_rate
     elif args.model_name == 'EfficientNet':
         pass
 
     print(performance_test)
+    performance_test.to_csv(opj(args.save_directory, f'performance_test_best_lr={args.learning_rate}.csv'))
