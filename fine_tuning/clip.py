@@ -8,13 +8,16 @@ from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normal
 import torch
 import math
 from torch.optim.lr_scheduler import LinearLR
-from embedders.internal_datasets import CLIPImageCaptioningDataset, CLIPCaptioningDataset, CLIPImageDataset
+from embedders.internal_datasets import CLIPImageCaptioningDataset, CLIPCaptioningDataset, CLIPImageDataset, CLIPImageLabelDataset
 from embedders.transform import _train_transform
 from embedders.scheduler import cosine_lr
-
+import pandas as pd
 from torch.utils.data import DataLoader
 from PIL import Image
 from datetime import datetime
+
+from sklearn.metrics import f1_score
+from .linear_classifier import LinearClassifier
 
 
 def unwrap_model(model):
@@ -78,11 +81,24 @@ def text_embedder(model, list_of_labels, device="cuda", num_workers=1, batch_siz
 def convert_models_to_fp32(model):
     for p in model.parameters():
         p.data = p.data.float()
-        p.grad.data = p.grad.data.float()
+        if p.grad is not None:
+            p.grad.data = p.grad.data.float()
 
 class CLIPTuner:
 
-    def __init__(self, args=None, logging=None, model_type="ViT-B/32", lr=5e-5, weight_decay=0.2, warmup=50, comet_tracking=None, px_size=224, comet_tags=None):
+    def __init__(self,
+                args=None,
+                logging=None,
+                model_type="ViT-B/32",
+                backbone=None,
+                num_classes=None,
+                lr=5e-5,
+                weight_decay=0.2,
+                warmup=50,
+                comet_tracking=None,
+                px_size=224,
+                comet_tags=None
+                ):
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
         self.args = args
@@ -91,6 +107,10 @@ class CLIPTuner:
         self.model, self.preprocess = clip.load(model_type,
                                                 device=self.device,
                                                 jit=False)  # Must set jit=False for training
+        if backbone is not None:
+            print('Load pre-trained PLIP model')
+            self._load_checkpoint(path=backbone)
+        
         self.warmup = warmup
         self.train_preprocess = _train_transform(first_resize = self.args.first_resize,
                                                 n_px = self.args.pxsize
@@ -99,7 +119,7 @@ class CLIPTuner:
             self.model.float()
         else:
             clip.model.convert_weights(self.model)
-
+        
         self.hyper_params = {
             "lr": lr,
             "weight_decay": weight_decay
@@ -122,40 +142,79 @@ class CLIPTuner:
                                         lr=self.hyper_params["lr"],
                                         weight_decay=self.hyper_params["weight_decay"])
 
+        # TODO this is hard coded
+        input_size = 512
+        self.linear_classifier = LinearClassifier(input_size, num_classes)
+        self.linear_classifier = self.linear_classifier.to(self.device)
+        
+        self.classification_criterion = nn.CrossEntropyLoss()
 
 
-    def valid_evaluation(self, clip, validation_dataloader, pbar):
+    def _load_checkpoint(self,
+                        path=None,
+                        ):
+        if path is None:
+            raise Exception('No path provided.')
+        self.model.load_state_dict(torch.load(path))
+
+
+    def calculate_f1_score(self, outputs, labels, average='weighted'):
+        # Convert tensor outputs and labels to numpy arrays
+        outputs = outputs.cpu().numpy()
+        labels = labels.cpu().numpy()
+        # Convert outputs to predicted labels by selecting the index of the maximum value
+        predicted_labels = np.argmax(outputs, axis=1)
+        # Calculate the F1 score
+        f1 = f1_score(labels, predicted_labels, average=average)
+        return f1
+
+    def valid_evaluation(self, clip, dataloader, pbar, pbar_description="Currently Validating"):
         valid_loss_this_epoch = 0
-        for batch in validation_dataloader:
-            pbar.set_description("Currently Validating")
+        
+        outputs_list = []
+        labels_list = []
+
+        for batch in dataloader:
+            pbar.set_description(pbar_description)
 
             with torch.no_grad():
-
-                list_image, list_txt = batch
-
-                images = list_image
+                images, labels = batch
                 images = images.to(self.device)
-                texts = clip.tokenize(list_txt, truncate=True).to(self.device)
+                labels = labels.to(self.device)
+                # Forward pass
+                image_features = self.model.encode_image(images)
+                outputs = self.linear_classifier(image_features)
+                
+                # Append the output and label tensors to the lists
+                outputs_list.append(outputs)
+                labels_list.append(labels)
 
-                logits_per_image, logits_per_text = self.model(images, texts)
-
-                logits_per_image = logits_per_image
-                logits_per_text = logits_per_text
-
-                ground_truth = torch.arange(len(images), dtype=torch.long, device=self.device)
-
-                total_loss = (self.loss_img(logits_per_image, ground_truth) +
-                                self.loss_txt(logits_per_text, ground_truth)) / 2
+                # Compute the loss
+                total_loss = self.classification_criterion(outputs, labels)
                 valid_loss_this_epoch += total_loss.cpu().data.numpy()
-                #self.experiment.log_metric("validation_loss", total_loss.item(), step=step)
-        return valid_loss_this_epoch
+
+        # Concatenate output and label tensors
+        outputs_all = torch.cat(outputs_list, dim=0)
+        labels_all = torch.cat(labels_list, dim=0)
+        f1_weighted = self.calculate_f1_score(outputs_all, labels_all, average='weighted')
+        f1_macro = self.calculate_f1_score(outputs_all, labels_all, average='macro')
+        return valid_loss_this_epoch, f1_weighted, f1_macro
+    
         
-    def tuner(self, train_dataframe, validation_dataframe, save_directory, batch_size=4, epochs=5,
-              evaluation_steps=500, num_workers=1):
+
+    def tuner(self,
+                train_dataframe,
+                validation_dataframe,
+                save_directory,
+                batch_size=4,
+                epochs=5,
+                evaluation_steps=500,
+                num_workers=1
+                ):
 
         start_time = str(datetime.now())
-        train_dataset = CLIPImageCaptioningDataset(train_dataframe, self.train_preprocess)
-        validation_dataset = CLIPImageCaptioningDataset(validation_dataframe, self.preprocess)
+        train_dataset = CLIPImageLabelDataset(train_dataframe, self.train_preprocess)
+        validation_dataset = CLIPImageLabelDataset(validation_dataframe, self.preprocess)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
         validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, num_workers=num_workers)
         num_batches_per_epoch = len(train_dataloader)
@@ -164,7 +223,11 @@ class CLIPTuner:
 
         #with self.experiment.train():
 
-        for epoch in range(epochs):
+        self.model.train()
+
+        performance_df = pd.DataFrame(index=np.arange(epochs+1), columns=['epoch','loss','f1_weighted','f1_macro'])
+
+        for epoch in range(epochs+1):
             pbar = tqdm.tqdm(position=0, total=len(train_dataloader))
             pbar.set_description(f"{epoch}/{epochs}")
 
@@ -174,24 +237,23 @@ class CLIPTuner:
                 step = num_batches_per_epoch * epoch + i
                 scheduler(step)
 
-                list_image, list_txt = batch
-
-                images = list_image
+                images, labels = batch
                 images = images.to(self.device)
-                texts = clip.tokenize(list_txt, truncate=True).to(self.device)
+                labels = labels.to(self.device)
 
-                logits_per_image, logits_per_text = self.model(images, texts)
+                # Forward pass
+                image_features = self.model.encode_image(images)
+                outputs = self.linear_classifier(image_features)
 
+                # Compute the loss
+                # TODO confirming if logit is needed.
+                total_loss = self.classification_criterion(outputs, labels)
+                
                 logit_scale = self.model.logit_scale.exp()
                 #self.experiment.log_metric("logit_scale", logit_scale.item(), step=step)
 
-                logits_per_image = logits_per_image
-                logits_per_text = logits_per_text
-
                 ground_truth = torch.arange(len(images), dtype=torch.long, device=self.device)
 
-                total_loss = (self.loss_img(logits_per_image, ground_truth) + self.loss_txt(logits_per_text,
-                                                                                            ground_truth)) / 2
                 total_loss.backward()
                 new_lr = scheduler(step)
 
@@ -210,22 +272,30 @@ class CLIPTuner:
                 with torch.no_grad():
                     unwrap_model(self.model).logit_scale.clamp_(0, math.log(100))
 
-                if step % evaluation_steps == 0:
-                    valid_loss_this_epoch = self.valid_evaluation(clip, validation_dataloader, pbar)
-                    pbar.set_description(f"{epoch}/{epochs}")
-                    self.logging.info(f'[Validation - this batch] epoch: {epoch}, batch: {i}, total loss: {valid_loss_this_epoch}')
+                if evaluation_steps == 0:
+                    pass
+                else:
+                    if step % evaluation_steps == 0:
+                        valid_loss_this_epoch, f1_weighted, f1_macro = self.valid_evaluation(clip, validation_dataloader, pbar, pbar_description="Currently Validating")
+                        pbar.set_description(f"{epoch}/{epochs}")
+                        self.logging.info(f'[Validation - this batch] epoch: {epoch}, batch: {i}, total loss: {valid_loss_this_epoch}, f1_weighted: {f1_weighted}, f1_macro: {f1_macro}')
 
-            train_loss_this_epoch += total_loss.cpu().data.numpy()
             self.logging.info(f'[Train - final] epoch: {epoch}, total loss: {train_loss_this_epoch}')
 
             # Validation at the end of each epoch
-            valid_loss_this_epoch = self.valid_evaluation(clip, validation_dataloader, pbar)
+            valid_loss_this_epoch, f1_weighted, f1_macro = self.valid_evaluation(clip, validation_dataloader, pbar, pbar_description="Currently Validating")
             pbar.set_description(f"{epoch}/{epochs}")
-            self.logging.info(f'[Validation - final] epoch: {epoch}, total loss: {valid_loss_this_epoch}')
+            self.logging.info(f'[Validation - final] epoch: {epoch}, total loss: {valid_loss_this_epoch}, f1_weighted: {f1_weighted}, f1_macro: {f1_macro}')
 
-            torch.save(self.model.state_dict(), f"{save_directory}/epoch_{epoch}"
-                                                f"_{start_time}_model.pt")
+            performance_df.loc[epoch, 'epoch'] = epoch
+            performance_df.loc[epoch, 'loss'] = valid_loss_this_epoch
+            performance_df.loc[epoch, 'f1_weighted'] = f1_weighted
+            performance_df.loc[epoch, 'f1_macro'] = f1_macro
+
+            #torch.save(self.model.state_dict(), f"{save_directory}/epoch_{epoch}_{start_time}_model.pt")
 
             pbar.close()
 
-        return f"_{start_time}_model.pt"
+        performance_df['f1_weighted'] = performance_df['f1_weighted'].astype(float)
+        performance_df['f1_macro'] = performance_df['f1_macro'].astype(float)
+        return performance_df

@@ -2,4 +2,4 @@
 /venv/
 /parallel_on_sherlock
 *.pyc
-*.env
+config.env
