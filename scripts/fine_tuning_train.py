@@ -24,7 +24,7 @@ def torch_init(random_seed):
 def convert_dataset_labels(args, df):
     #TODO This is currently hard-coded. May need to refactorize.
     df = df[['image', 'label']] # this is hard-coded
-    df['image'] = df['image'].replace('pathtweets_data_20230211', 'pathtweets_data_20230426')
+    df['image'] = df['image'].str.replace('pathtweets_data_20230211', 'pathtweets_data_20230426')
     if args.dataset == 'Kather':
         label2digit = {'ADI':0, 'BACK':1, 'DEB':2, 'LYM':3, 'MUC':4, 'MUS':5, 'NORM':6, 'STR':7, 'TUM':8}
         df['label'] = df['label'].apply(lambda v: label2digit[v])
@@ -34,37 +34,40 @@ def convert_dataset_labels(args, df):
         raise Exception('No dataset available.')
     return df
 
-def tune_clip(args, train, valid, logging):
+def tune_model(args, train, valid, test=None, logging=None):
     # re-initialize torch at every training.
     torch_init(args.random_seed)
-    from fine_tuning.clip import CLIPTuner
+    from fine_tuning.finetune import FineTuner
     if args.model_name == 'clip':
         backbone = None
     elif args.model_name == "plip":
         backbone = args.backbone # re-defined in previous line.
     else:
-        raise Exception('Error.')
-    cpt = CLIPTuner(args=args,
+        backbone = None
+    cpt = FineTuner(args=args,
                     logging=logging,
-                    model_type=args.PC_CLIP_ARCH,
                     backbone=backbone,
                     num_classes=args.num_classes,
                     lr=args.learning_rate,
                     weight_decay=args.weight_decay,
-                    px_size=args.pxsize,
                     comet_tracking=args.comet_tracking,
                     comet_tags=args.comet_tags
                     )
 
-    performance = cpt.tuner(train, valid, save_directory=args.save_directory, batch_size=args.batch_size,
-                            epochs=args.epochs, evaluation_steps=args.evaluation_steps, num_workers=args.num_workers)
+    performance = cpt.tuner(train, valid, test,
+                            save_directory=args.save_directory,
+                            batch_size=args.batch_size,
+                            epochs=args.epochs,
+                            evaluation_steps=args.evaluation_steps,
+                            num_workers=args.num_workers
+                            )
     return performance
     
 def config():
     load_dotenv("../config.env")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", default="plip", type=str, choices=['plip', 'clip', 'mudipath'])
+    parser.add_argument("--model_name", default="plip", type=str, help='choose from: plip, clip, EfficientNet_b0, ...')
     parser.add_argument("--backbone", default='default', type=str)
     parser.add_argument("--dataset", default="Kather", type=str, choices=['Kather', 'PanNuke', 'WSSS4LUAD_binary', 'DigestPath'])
 
@@ -75,15 +78,14 @@ def config():
                         help="""The ratio of the training data (range 0.0 - 1.0).
                                 If value = 1, use all training data to fine-tune.
                                 If value = 0.2, use 20%% of the training data to fine-tune.""")
-    parser.add_argument("--valid_ratio", default=0.10, type=float,
+    parser.add_argument("--valid_ratio", default=0.3, type=float,
                         help="""The ratio of the validation set that came from training data.
-                                If sub-sampling was performed on the training data, the validation set is generated using the sub-sampled portion.""")
+                                If sub-sampling was performed on the training data, the validation set
+                                is generated using the sub-sampled portion.""")
     # Deprecate learning-rate: set it in for loop.
     #parser.add_argument("--learning-rate", default=1e-5, type=float)
     parser.add_argument("--weight-decay", default=0.1, type=float)
     parser.add_argument("--epochs", default=10, type=int)
-    parser.add_argument("--first_resize", default=512, type=int, help='This is image preprocessing transformation parameter.')
-    parser.add_argument("--pxsize", default=224, type=int)
     parser.add_argument("--optimizer", default='AdamW', type=str)
     parser.add_argument("--evaluation-steps", default=0, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
     parser.add_argument("--save_directory", default='/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning')
@@ -108,9 +110,9 @@ if __name__ == "__main__":
     print(f'    Model: {args.model_name}')
     print(f'    Backbone: {args.backbone}')
 
-    ##########################################
+    ###############################################################
     # Step 1. Prepare the dataset
-    ##########################################
+    ###############################################################
 
     train_dataset_name = args.dataset + "_train.csv"
     test_dataset_name = args.dataset + "_test.csv"
@@ -122,24 +124,31 @@ if __name__ == "__main__":
     test_dataset = convert_dataset_labels(args, test_dataset)
     args.num_classes = len(train_dataset['label'].unique())
 
-    # Subsmple dataset
-    if args.percentage_of_training_data < 1:
-        print('Subsample dataset (few-shot)')
-        print(f'Number of training data before sub-sampling: {len(train_dataset)}')
-        train_dataset = train_dataset.sample(frac=args.percentage_of_training_data, random_state=args.random_seed)
-        print(f'Number of training data after sub-sampling : {len(train_dataset)}')
+
+    ###############################################################
+    # Step 2. Subsmple & shuffle dataset
+    ###############################################################
+    # Regardless of whether the fraction = 1 or not, we still need to execute this section of the code to ensure the training data is shuffled.
+    print('Subsample dataset (few-shot)')
+    print(f'Number of training data before sub-sampling: {len(train_dataset)}')
+    train_dataset = train_dataset.sample(frac=args.percentage_of_training_data, random_state=args.random_seed)
+    print(f'Number of training data after sub-sampling : {len(train_dataset)}')
 
 
-    train, valid = train_test_split(train_dataset, test_size=args.valid_ratio,
-                                            random_state=args.random_seed,
-                                            shuffle=True)
+
+    ###############################################################
+    # Step 3. Prepare training and validation splits and create save path.
+    ###############################################################
+    train, valid = train_test_split(train_dataset,
+                                    test_size=args.valid_ratio,
+                                    random_state=args.random_seed,
+                                    shuffle=True)
                                             
     print(f'Number of training: {len(train)} / validation: {len(valid)} / testing: {len(test_dataset)}')
     
     TIMESTRING  = time.strftime("%Y%m%d-%H.%M.%S", time.localtime())
     if args.model_name == 'plip':
-        savesubdir = f'PLIP_data={args.dataset}_btch={args.batch_size}_'+\
-                        f'wd={args.weight_decay}_firstresize={args.first_resize}_pxsize={args.pxsize}_nepochs={args.epochs}_'+\
+        savesubdir = f'PLIP_btch={args.batch_size}_wd={args.weight_decay}_nepochs={args.epochs}_'+\
                         f'validratio={args.valid_ratio}_optimizer={args.optimizer}'
     else:
         savesubdir = f'{args.model_name}'
@@ -163,44 +172,45 @@ if __name__ == "__main__":
 
     args.comet_tracking = None
 
-    ##########################################
-    # Step 2. Run Train-validation to find hyper-parameter
-    ##########################################
-    lr_search_list = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+    ###############################################################
+    # Step 4. Run Train-validation to find hyper-parameter
+    ###############################################################
+    
+    lr_search_list = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
+
     all_performance = pd.DataFrame()
-
-
     for lr in lr_search_list:
         print(f'Current learning rate: {lr}')
         logging.info(f'Current learning rate: {lr}')
         args.learning_rate = lr
-        if args.model_name in ["clip", "plip"]:
-            performance = tune_clip(args, train, valid, logging)
-            performance['learning_rate'] = args.learning_rate
-            all_performance = pd.concat([all_performance, performance], axis=0).reset_index(drop=True)
-        elif args.model_name == 'EfficientNet':
-            pass
-            
+        performance = tune_model(args, train, valid, test_dataset, logging=logging)
+        performance['learning_rate'] = args.learning_rate
+        print(performance)
+        all_performance = pd.concat([all_performance, performance], axis=0).reset_index(drop=True)
+        all_performance.to_csv(opj(args.save_directory, f'performance_val.tsv'), sep='\t')
+
     print(all_performance)
-    all_performance.to_csv(opj(args.save_directory, f'performance_val.csv'))
     # Evaluate at max epoch:
-    perf_maxepoch = all_performance.loc[all_performance['epoch'] == args.epochs]
+    perf_maxepoch = all_performance.loc[all_performance['epoch'] == (args.epochs-1)]
     best_lr = perf_maxepoch['learning_rate'][perf_maxepoch['f1_weighted'].idxmax()]
 
     print(f"Best learning rate: {best_lr}")
     logging.info(f"Best learning rate: {best_lr}")
 
-    ##########################################
-    # Step 3. Use the best hyperparameter and retrain the model
-    #         by combining training and validation split.
-    ##########################################
-    args.learning_rate = best_lr
+    '''
+    best_lr = 1e-5
+    '''
 
-    if args.model_name in ["clip", "plip"]:
-        performance_test = tune_clip(args, train_dataset, test_dataset, logging)
-        performance_test['learning_rate'] = args.learning_rate
-    elif args.model_name == 'EfficientNet':
-        pass
+    ###############################################################
+    # Step 5. Use the best hyperparameter and retrain the model
+    #         by combining training and validation split.
+    ###############################################################
+    args.learning_rate = best_lr
+    # Shuffle the rows
+    train_dataset = train_dataset.sample(frac=1, random_state=args.random_seed)
+
+    performance_test = tune_model(args, train_dataset, test_dataset, logging=logging)
+    performance_test['learning_rate'] = args.learning_rate
 
     print(performance_test)
-    performance_test.to_csv(opj(args.save_directory, f'performance_test_best_lr={args.learning_rate}.csv'))
+    performance_test.to_csv(opj(args.save_directory, f'performance_test_best_lr={args.learning_rate}.tsv'), sep='\t')
