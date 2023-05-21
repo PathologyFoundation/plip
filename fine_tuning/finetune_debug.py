@@ -85,7 +85,7 @@ def convert_models_to_fp32(model):
         if p.grad is not None:
             p.grad.data = p.grad.data.float()
 
-class FineTuner:
+class FineTuner_debug:
 
     def __init__(self,
                 args=None,
@@ -201,7 +201,7 @@ class FineTuner:
             self.model.to(self.device)
             # parameters to be back-propagated.
             bp_params = self.model.parameters()
-
+            
         elif self.args.model_name.startswith('vit'):
             self.model = None
             if self.args.model_name == 'vit_b_16':
@@ -285,10 +285,12 @@ class FineTuner:
         
         outputs_list = []
         labels_list = []
-        
+
+        #'''
         self.model.eval()
         if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
             self.linear_classifier.eval()
+        #'''
 
         for batch in dataloader:
             pbar.set_description(pbar_description)
@@ -314,10 +316,12 @@ class FineTuner:
         labels_all = torch.cat(labels_list, dim=0)
         f1_weighted = self.calculate_f1_score(outputs_all, labels_all, average='weighted')
         f1_macro = self.calculate_f1_score(outputs_all, labels_all, average='macro')
-
+        
+        #'''
         self.model.train()
         if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
             self.linear_classifier.train()
+        #'''
 
         return valid_loss_this_epoch, f1_weighted, f1_macro
     
@@ -384,7 +388,7 @@ class FineTuner:
                 new_lr = scheduler(step)
 
                 train_loss_this_epoch += total_loss.cpu().data.numpy()
-                self.logging.info(f'[Train - this batch] epoch: {epoch}, batch: {i}, new learning rate: {new_lr}')
+                #self.logging.info(f'[Train - this batch] epoch: {epoch}, batch: {i}, new learning rate: {new_lr}')
                 #self.experiment.log_metric("learning_rate", new_lr, step=step)
 
                 if self.device == "cpu":
@@ -401,14 +405,15 @@ class FineTuner:
                     if step % evaluation_steps == 0:
                         valid_loss_this_epoch, f1_weighted, f1_macro = self.valid_evaluation(validation_dataloader, pbar, pbar_description="Currently Validating")
                         pbar.set_description(f"{epoch}/{epochs}")
-                        self.logging.info(f'[Validation - this batch] epoch: {epoch}, batch: {i}, total loss: {valid_loss_this_epoch}, f1_weighted: {f1_weighted}, f1_macro: {f1_macro}')
+                        test_loss_this_epoch, f1_weighted_test, f1_macro_test = self.valid_evaluation(test_dataloader, pbar, pbar_description="Currently Testing")
+                        print(f'[epoch: {epoch}, batch: {i}] val loss: {valid_loss_this_epoch:.4f}, test loss: {test_loss_this_epoch:.4f}, f1_weighted_val: {f1_weighted:.4f}, f1_macro_val: {f1_macro:.4f}, f1_weighted_test: {f1_weighted_test:.4f}, f1_macro_test: {f1_macro_test:.4f}')
 
             self.logging.info(f'[Train - final] epoch: {epoch}, total loss: {train_loss_this_epoch}')
 
             # Validation at the end of each epoch
             valid_loss_this_epoch, f1_weighted, f1_macro = self.valid_evaluation(validation_dataloader, pbar, pbar_description="Currently Validating")
             pbar.set_description(f"{epoch}/{epochs}")
-            self.logging.info(f'[Validation - final] epoch: {epoch}, total loss: {valid_loss_this_epoch}, f1_weighted: {f1_weighted}, f1_macro: {f1_macro}')
+            self.logging.info(f'[Validation - final] epoch: {epoch}, total loss: {valid_loss_this_epoch:.4f}, f1_weighted: {f1_weighted:.4f}, f1_macro: {f1_macro:.4f}')
 
             performance_df.loc[epoch, 'epoch'] = epoch
             performance_df.loc[epoch, 'loss'] = valid_loss_this_epoch

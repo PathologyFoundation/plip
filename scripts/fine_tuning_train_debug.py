@@ -37,14 +37,14 @@ def convert_dataset_labels(args, df):
 def tune_model(args, train, valid, test=None, logging=None):
     # re-initialize torch at every training.
     torch_init(args.random_seed)
-    from fine_tuning.finetune import FineTuner
+    from fine_tuning.finetune_debug import FineTuner_debug
     if args.model_name == 'clip':
         backbone = None
     elif args.model_name == "plip":
         backbone = args.backbone # re-defined in previous line.
     else:
         backbone = None
-    cpt = FineTuner(args=args,
+    cpt = FineTuner_debug(args=args,
                     logging=logging,
                     backbone=backbone,
                     num_classes=args.num_classes,
@@ -87,7 +87,7 @@ def config():
     parser.add_argument("--weight-decay", default=0.1, type=float)
     parser.add_argument("--epochs", default=10, type=int)
     parser.add_argument("--optimizer", default='AdamW', type=str)
-    parser.add_argument("--evaluation-steps", default=0, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
+    parser.add_argument("--evaluation-steps", default=1, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
     parser.add_argument("--save_directory", default='/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning')
     parser.add_argument("--comet-tracking", default=False)
     parser.add_argument("--comet_tags", nargs="*")
@@ -182,6 +182,7 @@ if __name__ == "__main__":
     # Step 4. Run Train-validation to find hyper-parameter
     ###############################################################
 
+    '''
     lr_search_list = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
 
     all_performance = pd.DataFrame()
@@ -204,8 +205,10 @@ if __name__ == "__main__":
     logging.info(f"Best learning rate: {best_lr}")
 
     '''
+
     best_lr = 1e-5
-    '''
+    if args.model_name.startswith('EfficientNet'):
+        best_lr = 1e-3
 
     ###############################################################
     # Step 5. Use the best hyperparameter and retrain the model
@@ -213,9 +216,9 @@ if __name__ == "__main__":
     ###############################################################
     args.learning_rate = best_lr
     # Shuffle the rows
-    train_dataset = train_dataset.sample(frac=1, random_state=args.random_seed)
+    #train_dataset = train_dataset.sample(frac=1, random_state=args.random_seed)
 
-    performance_test = tune_model(args, train_dataset, test_dataset, logging=logging)
+    performance_test = tune_model(args, train, valid, test_dataset, logging=logging)
     performance_test['learning_rate'] = args.learning_rate
 
     print(performance_test)
