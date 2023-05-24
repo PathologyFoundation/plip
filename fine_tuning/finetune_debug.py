@@ -15,70 +15,35 @@ import pandas as pd
 from torch.utils.data import DataLoader
 from PIL import Image
 from datetime import datetime
+import torch.nn.functional as F
 from torch.cuda.amp import autocast
-
 from sklearn.metrics import f1_score
-from .linear_classifier import LinearClassifier
+
+from metrics import eval_metrics
 
 
-def unwrap_model(model):
-    if hasattr(model, 'module'):
-        return model.module
-    else:
-        return model
+# Define a linear classifier
+class LinearClassifier(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(LinearClassifier, self).__init__()
+        self.relu = nn.ReLU()
+        self.fc = nn.Linear(input_size, num_classes)
+        
+    def forward(self, x):
+        # Convert input matrix to the same data type as self.weight
+        x = x.to(self.fc.weight.dtype)
+        # Apply normalization
+        #x = F.normalize(x, p=2, dim=1)
+        #x = self.relu(x) # Do not add non-linear, cuz that will be different from linear probing arch.
+        out = self.fc(x)
+        return out
 
-def zero_shot_classification(model, preprocess, images, labels, device, num_workers=1, batch_size=32):
-    image_embeddings = image_embedder(model, preprocess, images, device, num_workers, batch_size)
-    text_embeddings = text_embedder(model, labels, device, num_workers, batch_size)
-
-    score = image_embeddings.dot(text_embeddings.T)
-    predictions = [labels[np.argmax(i)] for i in score]
-
-    return predictions
-
-
-def image_embedder(model, preprocess, list_of_images, device="cuda", num_workers=1, batch_size=32):
-    train_dataset = CLIPImageDataset(list_of_images, preprocess)
-    dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-
-    image_embeddings = []
-
-    total = len(list_of_images) // batch_size
-    pbar = tqdm.tqdm(total=total, position=0)
-    with torch.no_grad():
-        for images in dataloader:
-            images = images.to(device)
-
-            image_embeddings.extend(model.encode_image(images).detach().cpu().numpy())
-
-            pbar.update(1)
-        pbar.close()
-
-    image_embeddings = np.array(image_embeddings)
-    image_embeddings = image_embeddings / np.linalg.norm(image_embeddings, axis=1, keepdims=True)
-    return image_embeddings
-
-def text_embedder(model, list_of_labels, device="cuda", num_workers=1, batch_size=32):
-    train_dataset = CLIPCaptioningDataset(list_of_labels)
-    dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-    text_embeddings = []
-    total = len(list_of_labels) // batch_size
-
-    pbar = tqdm.tqdm(total=total, position=0)
-    with torch.no_grad():
-        for captions in dataloader:
-            idx = clip.tokenize(captions, truncate=True).to(device)
-            text_embeddings.extend(model.encode_text(idx).detach().cpu().numpy())
-
-            pbar.update(1)
-
-        pbar.close()
-
-    text_embeddings = np.array(text_embeddings)
-    text_embeddings = text_embeddings / np.linalg.norm(text_embeddings, axis=1, keepdims=True)
-
-    return text_embeddings
-
+    def l2_penalty(self):
+        l2_norm = torch.tensor(0.0).to(self.fc.weight.device)
+        for param in self.parameters():
+            l2_norm += torch.norm(param, p=2)
+        return l2_norm
+        
 def convert_models_to_fp32(model):
     for p in model.parameters():
         p.data = p.data.float()
@@ -117,11 +82,28 @@ class FineTuner_debug:
         self.model, self.preprocess = clip.load(model_type,
                                                 device=self.device,
                                                 jit=False)  # Must set jit=False for training
+        # Update on 5/22: self.preprocess is the same as linear probing preprocess.
+        # But the embedding carried out from PLIP with same backbone is different on Kather test.
+        # Both linear probing and fine-tuning have the same model weights for ViT for both PLIP and CLIP.
         if self.args.model_name in ['plip', 'clip']:
             # TODO this is hard coded
             input_size = 512
             self.linear_classifier = LinearClassifier(input_size, num_classes)
             self.linear_classifier = self.linear_classifier.to(self.device)
+
+            '''
+            print(self.linear_classifier)
+            # replace weight from linear probing
+            import pickle
+            with open('/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning/linclassifier_temp.pkl', 'rb') as f:
+                lin_classifier = pickle.load(f)
+            self.linear_classifier.fc.weight.data = torch.FloatTensor(lin_classifier.coef_).to(self.device)
+            self.linear_classifier.fc.bias.data = torch.FloatTensor(lin_classifier.intercept_).to(self.device)
+
+            print('Success')
+            #exit()
+            '''
+
 
             if backbone is not None:
                 print('Load pre-trained PLIP model')
@@ -129,8 +111,17 @@ class FineTuner_debug:
                     raise Exception('This is wrong.')
                 self._load_plip_checkpoint(path=backbone)
 
+            #print(self.model.visual.conv1.weight)
+            #exit()
+
             # parameters to be back-propagated.
             bp_params = list(self.model.parameters()) + list(self.linear_classifier.parameters())
+            '''
+            # Freeze the model
+            for param in self.model.parameters():
+                param.requires_grad = False
+            bp_params = self.linear_classifier.parameters()
+            '''
         
         elif self.args.model_name == 'MuDiPath':
             # TODO this is hard coded
@@ -242,6 +233,10 @@ class FineTuner_debug:
             self.optimizer = optim.Adagrad(bp_params,
                                             lr=self.hyper_params["lr"],
                                             weight_decay=self.hyper_params["weight_decay"])
+        elif self.args.optimizer == 'SGD':
+            self.optimizer = optim.SGD(bp_params,
+                                            lr=self.hyper_params["lr"],
+                                            weight_decay=self.hyper_params["weight_decay"])
 
 
 
@@ -266,6 +261,7 @@ class FineTuner_debug:
     def forward_pass(self, images):
         if self.args.model_name in ['plip', 'clip']:
             image_features = self.model.encode_image(images)
+            image_features = F.normalize(image_features, p=2, dim=1)
             outputs = self.linear_classifier(image_features)
         elif self.args.model_name == 'MuDiPath':
             with autocast():
@@ -291,7 +287,8 @@ class FineTuner_debug:
         if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
             self.linear_classifier.eval()
         #'''
-
+        
+        #tensor_list = []
         for batch in dataloader:
             pbar.set_description(pbar_description)
 
@@ -301,6 +298,25 @@ class FineTuner_debug:
                 labels = labels.to(self.device)
 
                 # Forward pass
+                '''
+                if pbar_description == 'Currently Testing':
+                    if self.args.model_name in ['plip', 'clip']:
+                        image_features = self.model.encode_image(images)
+                        image_features = F.normalize(image_features, p=2, dim=1)
+                        tensor_list.append(image_features)
+                        outputs = self.linear_classifier(image_features)
+                    elif self.args.model_name == 'MuDiPath':
+                        with autocast():
+                            image_features = self.model(images).squeeze()
+                            outputs = self.linear_classifier(image_features)
+                    elif self.args.model_name.startswith('EfficientNet'):
+                        with autocast():
+                            outputs = self.model(images)
+                    else:
+                        with autocast():
+                            outputs = self.model(images)
+                else:
+                '''
                 outputs = self.forward_pass(images)
                 
                 # Append the output and label tensors to the lists
@@ -314,9 +330,28 @@ class FineTuner_debug:
         # Concatenate output and label tensors
         outputs_all = torch.cat(outputs_list, dim=0)
         labels_all = torch.cat(labels_list, dim=0)
+
+
+        # method 1
         f1_weighted = self.calculate_f1_score(outputs_all, labels_all, average='weighted')
         f1_macro = self.calculate_f1_score(outputs_all, labels_all, average='macro')
+
+        # Concatenate tensors along dimension 0
+        #concatenated_tensor = torch.cat(tensor_list, dim=0)
+        #print(concatenated_tensor.shape)
+        #print(concatenated_tensor)
         
+        '''
+        # method 2
+        outputs_all = outputs_all.cpu().numpy()
+        labels_all = labels_all.cpu().numpy()
+        # Convert outputs to predicted labels by selecting the index of the maximum value
+        predicted_labels = np.argmax(outputs_all, axis=1)
+        perf = eval_metrics(y_true=labels_all, y_pred=predicted_labels, y_pred_proba=outputs_all, average_method='weighted')
+        print(perf)
+        '''
+
+
         #'''
         self.model.train()
         if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
@@ -344,11 +379,18 @@ class FineTuner_debug:
         # Regardless the model_type, we will use the same CLIP Image Label Dataset loader.
         train_dataset = CLIPImageLabelDataset(train_dataframe, self.preprocess)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
+
         validation_dataset = CLIPImageLabelDataset(validation_dataframe, self.preprocess)
         validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, num_workers=num_workers)
+        
         if test_dataframe is not None:
             test_dataset = CLIPImageLabelDataset(test_dataframe, self.preprocess)
             test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers)
+        
+        #pbar = tqdm.tqdm(position=0, total=len(train_dataloader))
+        #test_loss_this_epoch, f1_weighted_test, f1_macro_test = self.valid_evaluation(test_dataloader, pbar, pbar_description="Currently Testing")
+        #exit()
+
 
         num_batches_per_epoch = len(train_dataloader)
         total_steps = len(train_dataloader) * epochs
@@ -382,8 +424,20 @@ class FineTuner_debug:
                 #print(self.linear_classifier.fc.weight)
 
                 # Compute the loss
+                '''
+                if i == 10:
+                    print(outputs.shape)
+                    print(outputs)
+                    print(labels.shape)
+                    print(labels)
+                    exit()
+                '''
+
                 total_loss = self.classification_criterion(outputs, labels)
-                
+                #l2_loss = self.linear_classifier.l2_penalty()
+                #print(total_loss, l2_loss)
+                #total_loss = total_loss + l2_loss
+
                 total_loss.backward()
                 new_lr = scheduler(step)
 
@@ -413,7 +467,8 @@ class FineTuner_debug:
             # Validation at the end of each epoch
             valid_loss_this_epoch, f1_weighted, f1_macro = self.valid_evaluation(validation_dataloader, pbar, pbar_description="Currently Validating")
             pbar.set_description(f"{epoch}/{epochs}")
-            self.logging.info(f'[Validation - final] epoch: {epoch}, total loss: {valid_loss_this_epoch:.4f}, f1_weighted: {f1_weighted:.4f}, f1_macro: {f1_macro:.4f}')
+            test_loss_this_epoch, f1_weighted_test, f1_macro_test = self.valid_evaluation(test_dataloader, pbar, pbar_description="Currently Testing")
+            print(f'[epoch: {epoch}, batch: {i}] val loss: {valid_loss_this_epoch:.4f}, test loss: {test_loss_this_epoch:.4f}, f1_weighted_val: {f1_weighted:.4f}, f1_macro_val: {f1_macro:.4f}, f1_weighted_test: {f1_weighted_test:.4f}, f1_macro_test: {f1_macro_test:.4f}')
 
             performance_df.loc[epoch, 'epoch'] = epoch
             performance_df.loc[epoch, 'loss'] = valid_loss_this_epoch

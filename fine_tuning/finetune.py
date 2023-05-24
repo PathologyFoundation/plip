@@ -18,67 +18,19 @@ from datetime import datetime
 from torch.cuda.amp import autocast
 
 from sklearn.metrics import f1_score
-from .linear_classifier import LinearClassifier
 
-
-def unwrap_model(model):
-    if hasattr(model, 'module'):
-        return model.module
-    else:
-        return model
-
-def zero_shot_classification(model, preprocess, images, labels, device, num_workers=1, batch_size=32):
-    image_embeddings = image_embedder(model, preprocess, images, device, num_workers, batch_size)
-    text_embeddings = text_embedder(model, labels, device, num_workers, batch_size)
-
-    score = image_embeddings.dot(text_embeddings.T)
-    predictions = [labels[np.argmax(i)] for i in score]
-
-    return predictions
-
-
-def image_embedder(model, preprocess, list_of_images, device="cuda", num_workers=1, batch_size=32):
-    train_dataset = CLIPImageDataset(list_of_images, preprocess)
-    dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-
-    image_embeddings = []
-
-    total = len(list_of_images) // batch_size
-    pbar = tqdm.tqdm(total=total, position=0)
-    with torch.no_grad():
-        for images in dataloader:
-            images = images.to(device)
-
-            image_embeddings.extend(model.encode_image(images).detach().cpu().numpy())
-
-            pbar.update(1)
-        pbar.close()
-
-    image_embeddings = np.array(image_embeddings)
-    image_embeddings = image_embeddings / np.linalg.norm(image_embeddings, axis=1, keepdims=True)
-    return image_embeddings
-
-def text_embedder(model, list_of_labels, device="cuda", num_workers=1, batch_size=32):
-    train_dataset = CLIPCaptioningDataset(list_of_labels)
-    dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers)
-    text_embeddings = []
-    total = len(list_of_labels) // batch_size
-
-    pbar = tqdm.tqdm(total=total, position=0)
-    with torch.no_grad():
-        for captions in dataloader:
-            idx = clip.tokenize(captions, truncate=True).to(device)
-            text_embeddings.extend(model.encode_text(idx).detach().cpu().numpy())
-
-            pbar.update(1)
-
-        pbar.close()
-
-    text_embeddings = np.array(text_embeddings)
-    text_embeddings = text_embeddings / np.linalg.norm(text_embeddings, axis=1, keepdims=True)
-
-    return text_embeddings
-
+# Define a linear classifier
+class LinearClassifier(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(LinearClassifier, self).__init__()
+        self.fc = nn.Linear(input_size, num_classes)
+        
+    def forward(self, x):
+        # Convert input matrix to the same data type as self.weight
+        x = x.to(self.fc.weight.dtype)
+        out = self.fc(x)
+        return out
+        
 def convert_models_to_fp32(model):
     for p in model.parameters():
         p.data = p.data.float()
@@ -242,6 +194,10 @@ class FineTuner:
             self.optimizer = optim.Adagrad(bp_params,
                                             lr=self.hyper_params["lr"],
                                             weight_decay=self.hyper_params["weight_decay"])
+        elif self.args.optimizer == 'SGD':
+            self.optimizer = optim.SGD(bp_params,
+                                            lr=self.hyper_params["lr"],
+                                            weight_decay=self.hyper_params["weight_decay"])
 
 
 
@@ -378,6 +334,13 @@ class FineTuner:
                 #print(self.linear_classifier.fc.weight)
 
                 # Compute the loss
+                
+                # Check if the tensor has one dimension
+                if len(outputs.shape) == 1:
+                    #print("Tensor has one dimension, unsqueeze it.")
+                    outputs = outputs.unsqueeze(0)
+                else:
+                    pass
                 total_loss = self.classification_criterion(outputs, labels)
                 
                 total_loss.backward()

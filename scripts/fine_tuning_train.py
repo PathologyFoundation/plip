@@ -203,10 +203,6 @@ if __name__ == "__main__":
     print(f"Best learning rate: {best_lr}")
     logging.info(f"Best learning rate: {best_lr}")
 
-    '''
-    best_lr = 1e-5
-    '''
-
     ###############################################################
     # Step 5. Use the best hyperparameter and retrain the model
     #         by combining training and validation split.
@@ -217,6 +213,6 @@ if __name__ == "__main__":
 
     performance_test = tune_model(args, train_dataset, test_dataset, logging=logging)
     performance_test['learning_rate'] = args.learning_rate
-
+    
     print(performance_test)
     performance_test.to_csv(opj(args.save_directory, f'performance_test_best_lr={args.learning_rate}.tsv'), sep='\t')

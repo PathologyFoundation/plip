@@ -20,6 +20,9 @@ def eval_metrics(y_true, y_pred, y_pred_proba = None, average_method='weighted')
     assert len(y_true) == len(y_pred)
     if y_pred_proba is None:
         auroc = np.nan
+    elif len(np.unique(y_true)) > 2:
+        print('Multiclass AUC is not currently available.')
+        auroc = np.nan
     else:
         fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
         auroc = auc(fpr, tpr)

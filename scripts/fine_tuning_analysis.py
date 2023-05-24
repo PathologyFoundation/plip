@@ -9,8 +9,12 @@ import os
 opj = os.path.join
 import numpy as np
 from utils.results_handler import ResultsHandler
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
+sys.path.insert(0, '/oak/stanford/groups/jamesz/pathtweets/ML_scripts/utils')
+import install_font
 
 
 def config():
@@ -38,8 +42,13 @@ if __name__ == "__main__":
     args = config()
 
     datasets = ['Kather', 'PanNuke', 'DigestPath', 'WSSS4LUAD_binary']
+    train_ratios = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
     train_ratios = [0.01, 0.1, 0.5, 1]
     model_list = ['clip','plip','MuDiPath','EfficientNet_b0','EfficientNet_b3','EfficientNet_b7','resnet50','resnet101','vit_b_32','vit_b_16']
+    #model_list = ['plip','clip','MuDiPath','EfficientNet_b7','vit_b_32']
+    #model_list = ['plip','clip','MuDiPath','EfficientNet_b0','EfficientNet_b7','vit_b_32']
+    #model_list = ['plip','MuDiPath','EfficientNet_b0','EfficientNet_b7','vit_b_32']
+    model_list = ['plip','EfficientNet_b7','vit_b_32']
 
     ###############################################################
     # Step 1. Get all results
@@ -88,12 +97,46 @@ if __name__ == "__main__":
                 perf_df.loc[model, (dataset, train_ratio)] = f1_w
 
     print('---------------------------------------------------------')
-    print(perf_df)
+    print(perf_df.astype(float).round(decimals=3))
     
 
+    ###################################################################
+    # Now start plotting
+    ###################################################################
+    savedir = '/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning/__figures'
+    os.makedirs(savedir, exist_ok=True)
 
+    fig, ax = plt.subplots(1, len(datasets), figsize=(16,4), sharey=False)
+    for i, dataset in enumerate(datasets):
+        this_perf_df = perf_df.loc[:, dataset]
+        # Rename the index
+        this_perf_df.rename(index={'EfficientNet_b7': 'EfficientNet',
+                                    'vit_b_32': 'ViT-B/32',
+                                    'plip': 'PLIP image encoder'}, inplace=True)
+        # Set the x-axis label and tick labels
+        ax[i].set_xlabel('Proportion of training data used')
+        ax[i].set_xticks(range(len(this_perf_df.columns)), this_perf_df.columns, rotation=0)
 
+        this_perf_df.columns = np.arange(len(this_perf_df.columns))
+        sns.lineplot(data=this_perf_df.T,
+                    palette=sns.color_palette("muted", len(this_perf_df)),
+                    marker='o',
+                    ax=ax[i]
+                    )
+        # Set the y-axis label
+        ax[i].set_ylabel('Weighted F1')
+        # Set the y-axis to display values with two digits
+        ax[i].yaxis.set_major_formatter('{x:.2f}')
 
+        # Set the title
+        if dataset == "Kather":
+            dataset = 'Kather colon'
+        elif dataset == 'WSSS4LUAD_binary':
+            dataset = 'WSSS4LUAD'
+        ax[i].set_title(dataset)
+    fig.tight_layout()
+    fig.savefig(opj(savedir,'performance.png'), dpi=300)
+    fig.savefig(opj(savedir,'performance.pdf'))
 
 
 

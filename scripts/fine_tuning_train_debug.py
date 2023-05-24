@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
 import os
 opj = os.path.join
+import copy
 import numpy as np
 from utils.results_handler import ResultsHandler
 
@@ -26,8 +27,14 @@ def convert_dataset_labels(args, df):
     df = df[['image', 'label']] # this is hard-coded
     df['image'] = df['image'].str.replace('pathtweets_data_20230211', 'pathtweets_data_20230426')
     if args.dataset == 'Kather':
+        #df2 = copy.deepcopy(df)
         label2digit = {'ADI':0, 'BACK':1, 'DEB':2, 'LYM':3, 'MUC':4, 'MUS':5, 'NORM':6, 'STR':7, 'TUM':8}
         df['label'] = df['label'].apply(lambda v: label2digit[v])
+
+        #print('Uniq-img:', len(df2['image'].unique()))
+        #df2['image'] = [os.path.basename(v) for v in df2['image']]
+        #df2['labelx'] = df2['label'].apply(lambda v: label2digit[v])
+        #print(df2.sample(frac=1))
     elif args.dataset in ['DigestPath', 'PanNuke', 'WSSS4LUAD_binary']:
         df['label'] = df['label'].astype(int)
     else:
@@ -74,7 +81,7 @@ def config():
     ## Fine-tuning hparams
     parser.add_argument("--batch-size", default=128, type=int)
     parser.add_argument("--num_workers", default=8, type=int)
-    parser.add_argument("--percentage_of_training_data", default=1.0, type=float,
+    parser.add_argument("--percentage_of_training_data", default=0.99, type=float,
                         help="""The ratio of the training data (range 0.0 - 1.0).
                                 If value = 1, use all training data to fine-tune.
                                 If value = 0.2, use 20%% of the training data to fine-tune.""")
@@ -87,7 +94,7 @@ def config():
     parser.add_argument("--weight-decay", default=0.1, type=float)
     parser.add_argument("--epochs", default=10, type=int)
     parser.add_argument("--optimizer", default='AdamW', type=str)
-    parser.add_argument("--evaluation-steps", default=1, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
+    parser.add_argument("--evaluation-steps", default=100, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
     parser.add_argument("--save_directory", default='/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning')
     parser.add_argument("--comet-tracking", default=False)
     parser.add_argument("--comet_tags", nargs="*")
@@ -122,6 +129,7 @@ if __name__ == "__main__":
 
     train_dataset = convert_dataset_labels(args, train_dataset)
     test_dataset = convert_dataset_labels(args, test_dataset)
+    
     args.num_classes = len(train_dataset['label'].unique())
 
 
@@ -206,7 +214,7 @@ if __name__ == "__main__":
 
     '''
 
-    best_lr = 1e-5
+    best_lr = 5e-6
     if args.model_name.startswith('EfficientNet'):
         best_lr = 1e-3
 
