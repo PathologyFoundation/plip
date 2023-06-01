@@ -1,5 +1,5 @@
 cd scripts
-datasets=("BreaKHis_8_subtypes" "BreaKHis_binary" "DigestPath" "WSSS4LUAD_binary" "Kather" "PanNuke")
+datasets=("Kather" "PanNuke" "DigestPath" "WSSS4LUAD_binary")
 
 # Reproducing linear probing experiments
 # Iterate over different datasets and regularization strengths

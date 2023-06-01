@@ -64,7 +64,7 @@ class FineTuner:
         ##########################
         # Step 1. Model switch
         ##########################
-        # Get preprocess regardless if it is CLIP backbone or not (or like EfficientNet)
+        # Get preprocess regardless if it is CLIP backbone or not
         model_type = args.PC_CLIP_ARCH
         self.model, self.preprocess = clip.load(model_type,
                                                 device=self.device,
@@ -85,80 +85,6 @@ class FineTuner:
 
             # parameters to be back-propagated.
             bp_params = list(self.model.parameters()) + list(self.linear_classifier.parameters())
-        
-        elif self.args.model_name == 'MuDiPath':
-            # TODO this is hard coded
-            input_size = 1024
-            self.linear_classifier = LinearClassifier(input_size, num_classes)
-            self.linear_classifier = self.linear_classifier.to(self.device)
-
-            from embedders.mudipath import build_densenet
-            self.model = build_densenet(download_dir="/oak/stanford/groups/jamesz/pathtweets/models/",
-                                        pretrained="mtdp")  # TODO fixed path
-            # Modify the last fully connected layer
-            #for param in self.model.parameters():
-            #    param.data = param.data.float()
-            self.model.to(self.device)
-            # parameters to be back-propagated.
-            bp_params = list(self.model.parameters()) + list(self.linear_classifier.parameters())
-
-        elif self.args.model_name.startswith('EfficientNet_b'):
-            model_version = int(self.args.model_name.split('_b')[1])
-            self.model = None
-            if model_version == 0:
-                from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
-                self.model = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
-            elif model_version == 1:
-                from torchvision.models import efficientnet_b1, EfficientNet_B1_Weights
-                self.model = efficientnet_b1(weights=EfficientNet_B1_Weights.IMAGENET1K_V1)
-            elif model_version == 2:
-                from torchvision.models import efficientnet_b2, EfficientNet_B2_Weights
-                self.model = efficientnet_b2(weights=EfficientNet_B2_Weights.IMAGENET1K_V1)
-            elif model_version == 3:
-                from torchvision.models import efficientnet_b3, EfficientNet_B3_Weights
-                self.model = efficientnet_b3(weights=EfficientNet_B3_Weights.IMAGENET1K_V1)
-            elif model_version == 4:
-                from torchvision.models import efficientnet_b4, EfficientNet_B4_Weights
-                self.model = efficientnet_b4(weights=EfficientNet_B4_Weights.IMAGENET1K_V1)
-            elif model_version == 5:
-                from torchvision.models import efficientnet_b5, EfficientNet_B5_Weights
-                self.model = efficientnet_b5(weights=EfficientNet_B5_Weights.IMAGENET1K_V1)
-            elif model_version == 6:
-                from torchvision.models import efficientnet_b6, EfficientNet_B6_Weights
-                self.model = efficientnet_b6(weights=EfficientNet_B6_Weights.IMAGENET1K_V1)
-            elif model_version == 7:
-                from torchvision.models import efficientnet_b7, EfficientNet_B7_Weights
-                self.model = efficientnet_b7(weights=EfficientNet_B7_Weights.IMAGENET1K_V1)
-            
-            # Modify the last fully connected layer
-            self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
-            for param in self.model.parameters():
-                param.data = param.data.float()
-            self.model.to(self.device)
-            # parameters to be back-propagated.
-            bp_params = self.model.parameters()
-
-        elif self.args.model_name.startswith('EfficientNet_V2_'):
-            model_version = self.args.model_name.split('_V2_')[1]
-            self.model = None
-            if model_version == 'S':
-                from torchvision.models import efficientnet_v2_s, EfficientNet_V2_S_Weights
-                self.model = efficientnet_v2_s(weights=EfficientNet_V2_S_Weights.IMAGENET1K_V1)
-            elif model_version == 'M':
-                from torchvision.models import efficientnet_v2_m, EfficientNet_V2_M_Weights
-                self.model = efficientnet_v2_m(weights=EfficientNet_V2_M_Weights.IMAGENET1K_V1)
-            elif model_version == 'L':
-                from torchvision.models import efficientnet_v2_l, EfficientNet_V2_L_Weights
-                self.model = efficientnet_v2_l(weights=EfficientNet_V2_L_Weights.IMAGENET1K_V1)
-            
-            # Modify the last fully connected layer
-            self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
-            for param in self.model.parameters():
-                param.data = param.data.float()
-            self.model.to(self.device)
-            # parameters to be back-propagated.
-            bp_params = self.model.parameters()
-        
         elif self.args.model_name.startswith('resnet'):
             model_version = int(self.args.model_name.split('resnet')[1])
             self.model = None
@@ -246,13 +172,6 @@ class FineTuner:
         if self.args.model_name in ['plip', 'clip']:
             image_features = self.model.encode_image(images)
             outputs = self.linear_classifier(image_features)
-        elif self.args.model_name == 'MuDiPath':
-            with autocast():
-                image_features = self.model(images).squeeze()
-                outputs = self.linear_classifier(image_features)
-        elif self.args.model_name.startswith('EfficientNet'):
-            with autocast():
-                outputs = self.model(images)
         else:
             with autocast():
                 outputs = self.model(images)
@@ -266,7 +185,7 @@ class FineTuner:
         labels_list = []
         
         self.model.eval()
-        if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
+        if self.args.model_name in ['plip', 'clip']:
             self.linear_classifier.eval()
 
         for batch in dataloader:
@@ -295,7 +214,7 @@ class FineTuner:
         f1_macro = self.calculate_f1_score(outputs_all, labels_all, average='macro')
 
         self.model.train()
-        if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
+        if self.args.model_name in ['plip', 'clip']:
             self.linear_classifier.train()
 
         return valid_loss_this_epoch, f1_weighted, f1_macro
@@ -330,7 +249,7 @@ class FineTuner:
         scheduler = cosine_lr(self.optimizer, self.hyper_params["lr"], self.warmup, total_steps)
 
         self.model.train()
-        if self.args.model_name in ['plip', 'clip', 'MuDiPath']:
+        if self.args.model_name in ['plip', 'clip']:
             self.linear_classifier.train()
 
         performance_df = pd.DataFrame(index=np.arange(epochs), columns=['epoch','loss','f1_weighted','f1_macro'])
