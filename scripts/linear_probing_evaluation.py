@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     prober = LinearProber(alpha=args.alpha, seed=args.seed)
 
-    results = prober.train_and_test(train_x=train_x, train_y=train_dataset["label"].tolist(),
+    classifier, results = prober.train_and_test(train_x=train_x, train_y=train_dataset["label"].tolist(),
                                     test_x=test_x, test_y=test_dataset["label"].tolist())
 
     additional_parameters = {'dataset': args.dataset, 'seed': args.seed,

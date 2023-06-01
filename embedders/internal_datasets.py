@@ -41,3 +41,18 @@ class CLIPImageDataset(Dataset):
     def __getitem__(self, idx):
         images = self.preprocessing(Image.open(self.images[idx]).convert('RGB'))  # preprocess from clip.load
         return images
+
+        
+class CLIPImageLabelDataset(Dataset):
+    def __init__(self, df, preprocessing):
+        self.images = df["image"].tolist()
+        self.label = df["label"].tolist()
+        self.preprocessing = preprocessing
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        images = self.preprocessing(Image.open(self.images[idx]).convert('RGB'))  # preprocess from clip.load
+        label = self.label[idx]
+        return images, label

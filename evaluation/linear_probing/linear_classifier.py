@@ -37,5 +37,5 @@ class LinearProber:
 
         logging.info(f"LinearProber Done")
 
-        return test_metrics, train_metrics
+        return classifier, (test_metrics, train_metrics)
 
