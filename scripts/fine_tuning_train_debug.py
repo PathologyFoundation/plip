@@ -94,7 +94,7 @@ def config():
     parser.add_argument("--weight-decay", default=0.1, type=float)
     parser.add_argument("--epochs", default=10, type=int)
     parser.add_argument("--optimizer", default='AdamW', type=str)
-    parser.add_argument("--evaluation-steps", default=100, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
+    parser.add_argument("--evaluation-steps", default=10, type=int, help='set to 0 to disable the evalutation steps (only evaluate at the end of each epoch)')
     parser.add_argument("--save_directory", default='/oak/stanford/groups/jamesz/pathtweets/results/fine_tuning')
     parser.add_argument("--comet-tracking", default=False)
     parser.add_argument("--comet_tags", nargs="*")
@@ -214,10 +214,10 @@ if __name__ == "__main__":
 
     '''
 
-    best_lr = 5e-6
+    best_lr = 1e-5
     if args.model_name.startswith('EfficientNet'):
         best_lr = 1e-3
-
+    
     ###############################################################
     # Step 5. Use the best hyperparameter and retrain the model
     #         by combining training and validation split.

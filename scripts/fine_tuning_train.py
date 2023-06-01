@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
 import os
 opj = os.path.join
+import glob
 import numpy as np
 from utils.results_handler import ResultsHandler
 
@@ -25,7 +26,7 @@ def convert_dataset_labels(args, df):
     #TODO This is currently hard-coded. May need to refactorize.
     df = df[['image', 'label']] # this is hard-coded
     df['image'] = df['image'].str.replace('pathtweets_data_20230211', 'pathtweets_data_20230426')
-    if args.dataset == 'Kather':
+    if args.dataset.startswith('Kather'):
         label2digit = {'ADI':0, 'BACK':1, 'DEB':2, 'LYM':3, 'MUC':4, 'MUS':5, 'NORM':6, 'STR':7, 'TUM':8}
         df['label'] = df['label'].apply(lambda v: label2digit[v])
     elif args.dataset in ['DigestPath', 'PanNuke', 'WSSS4LUAD_binary']:
@@ -67,9 +68,9 @@ def config():
     load_dotenv("../config.env")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", default="plip", type=str, help='choose from: plip, clip, EfficientNet_b0, ...')
+    parser.add_argument("--model_name", default="plip", type=str, help='choose from: plip, vit-b-32')
     parser.add_argument("--backbone", default='default', type=str)
-    parser.add_argument("--dataset", default="Kather", type=str, choices=['Kather', 'PanNuke', 'WSSS4LUAD_binary', 'DigestPath'])
+    parser.add_argument("--dataset", default="Kather_train", type=str, choices=['Kather_train', 'PanNuke', 'WSSS4LUAD_binary', 'DigestPath'])
 
     ## Fine-tuning hparams
     parser.add_argument("--batch-size", default=128, type=int)
@@ -114,11 +115,24 @@ if __name__ == "__main__":
     # Step 1. Prepare the dataset
     ###############################################################
 
-    train_dataset_name = args.dataset + "_train.csv"
-    test_dataset_name = args.dataset + "_test.csv"
-
-    train_dataset = pd.read_csv(os.path.join(data_folder, train_dataset_name))
-    test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
+    if args.dataset == 'Kather_train':
+        '''
+        Note:
+        Kather_train is the dataset only from 100K training data.
+        We then split 10% of the original 100K data into testing set.
+        '''
+        train_dataset_name = "Kather_train.csv"
+        train_dataset = pd.read_csv(os.path.join(data_folder, train_dataset_name))
+        train_dataset, test_dataset = train_test_split(train_dataset,
+                                                        test_size=0.1,
+                                                        random_state=args.random_seed,
+                                                        shuffle=True)
+    else:
+        train_dataset_name = args.dataset + "_train.csv"
+        test_dataset_name = args.dataset + "_test.csv"
+        train_dataset = pd.read_csv(os.path.join(data_folder, train_dataset_name))
+        test_dataset = pd.read_csv(os.path.join(data_folder, test_dataset_name))
+    
 
     train_dataset = convert_dataset_labels(args, train_dataset)
     test_dataset = convert_dataset_labels(args, test_dataset)
@@ -160,6 +174,12 @@ if __name__ == "__main__":
         savesubdir = f'{args.model_name}'
     args.save_directory = opj(args.save_directory, args.dataset, f'train_ratio={args.percentage_of_training_data}', savesubdir, f'random_seed={args.random_seed}_{TIMESTRING}')
     os.makedirs(args.save_directory, exist_ok=True)
+
+    matching_pattern = opj(args.save_directory, args.dataset, f'train_ratio={args.percentage_of_training_data}', savesubdir, f'random_seed={args.random_seed}_*', 'performance_test_*.tsv')
+    matching_files = glob.glob(matching_pattern)
+    if len(matching_files) > 0:
+        print('A result with same seed already existed. Exit.')
+        exit()
     
     args_df = pd.DataFrame(vars(args),index=['Value']).T
     args_df.to_csv(opj(args.save_directory, 'arguments.csv'))
@@ -183,6 +203,11 @@ if __name__ == "__main__":
     ###############################################################
 
     lr_search_list = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+
+    print('==================================')
+    print('Learning rate will be searched on:')
+    print(lr_search_list)
+    print('==================================')
 
     all_performance = pd.DataFrame()
     for lr in lr_search_list:

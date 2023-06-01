@@ -69,6 +69,8 @@ class FineTuner:
         self.model, self.preprocess = clip.load(model_type,
                                                 device=self.device,
                                                 jit=False)  # Must set jit=False for training
+
+
         if self.args.model_name in ['plip', 'clip']:
             # TODO this is hard coded
             input_size = 512
@@ -127,6 +129,27 @@ class FineTuner:
             elif model_version == 7:
                 from torchvision.models import efficientnet_b7, EfficientNet_B7_Weights
                 self.model = efficientnet_b7(weights=EfficientNet_B7_Weights.IMAGENET1K_V1)
+            
+            # Modify the last fully connected layer
+            self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
+            for param in self.model.parameters():
+                param.data = param.data.float()
+            self.model.to(self.device)
+            # parameters to be back-propagated.
+            bp_params = self.model.parameters()
+
+        elif self.args.model_name.startswith('EfficientNet_V2_'):
+            model_version = self.args.model_name.split('_V2_')[1]
+            self.model = None
+            if model_version == 'S':
+                from torchvision.models import efficientnet_v2_s, EfficientNet_V2_S_Weights
+                self.model = efficientnet_v2_s(weights=EfficientNet_V2_S_Weights.IMAGENET1K_V1)
+            elif model_version == 'M':
+                from torchvision.models import efficientnet_v2_m, EfficientNet_V2_M_Weights
+                self.model = efficientnet_v2_m(weights=EfficientNet_V2_M_Weights.IMAGENET1K_V1)
+            elif model_version == 'L':
+                from torchvision.models import efficientnet_v2_l, EfficientNet_V2_L_Weights
+                self.model = efficientnet_v2_l(weights=EfficientNet_V2_L_Weights.IMAGENET1K_V1)
             
             # Modify the last fully connected layer
             self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)

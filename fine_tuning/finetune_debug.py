@@ -24,10 +24,11 @@ from metrics import eval_metrics
 
 # Define a linear classifier
 class LinearClassifier(nn.Module):
-    def __init__(self, input_size, num_classes):
+    def __init__(self, input_size, num_classes, dropout_rate=0.5):
         super(LinearClassifier, self).__init__()
         self.relu = nn.ReLU()
         self.fc = nn.Linear(input_size, num_classes)
+        self.dropout = nn.Dropout(dropout_rate)
         
     def forward(self, x):
         # Convert input matrix to the same data type as self.weight
@@ -35,6 +36,7 @@ class LinearClassifier(nn.Module):
         # Apply normalization
         #x = F.normalize(x, p=2, dim=1)
         #x = self.relu(x) # Do not add non-linear, cuz that will be different from linear probing arch.
+        #x = self.dropout(x)
         out = self.fc(x)
         return out
 
@@ -49,6 +51,32 @@ def convert_models_to_fp32(model):
         p.data = p.data.float()
         if p.grad is not None:
             p.grad.data = p.grad.data.float()
+
+
+'''
+from torchvision.transforms import InterpolationMode
+BICUBIC = InterpolationMode.BICUBIC
+from torchvision.transforms import (
+    RandomAffine,
+    RandomPerspective,
+    RandomAutocontrast,
+    RandomEqualize,
+    RandomRotation,
+    RandomCrop,
+    RandomHorizontalFlip
+)
+def _convert_image_to_rgb(image):
+    return image.convert("RGB")
+
+def _transform(n_px):
+    return Compose([
+        Resize(n_px, interpolation=BICUBIC),
+        RandomCrop([224]),
+        _convert_image_to_rgb,
+        ToTensor(),
+        Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    ])
+'''
 
 class FineTuner_debug:
 
@@ -82,6 +110,10 @@ class FineTuner_debug:
         self.model, self.preprocess = clip.load(model_type,
                                                 device=self.device,
                                                 jit=False)  # Must set jit=False for training
+        '''
+        self.preprocess = _transform(384)
+        '''
+
         # Update on 5/22: self.preprocess is the same as linear probing preprocess.
         # But the embedding carried out from PLIP with same backbone is different on Kather test.
         # Both linear probing and fine-tuning have the same model weights for ViT for both PLIP and CLIP.
@@ -261,7 +293,7 @@ class FineTuner_debug:
     def forward_pass(self, images):
         if self.args.model_name in ['plip', 'clip']:
             image_features = self.model.encode_image(images)
-            image_features = F.normalize(image_features, p=2, dim=1)
+            #image_features = F.normalize(image_features, p=2, dim=1)
             outputs = self.linear_classifier(image_features)
         elif self.args.model_name == 'MuDiPath':
             with autocast():
