@@ -19,7 +19,8 @@ def config():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default="plip", type=str)
-    parser.add_argument("--caption_column", default="text_style_4", type=str)
+    parser.add_argument("--caption_column", default="text_style_4", type=str,
+                        help="text_style_4 serves as the most intuitive prompt formulation for describing the image: An H&E image of XXX. On the other hand, text_style_0 simply acts as a categorical label for XXX.")
     parser.add_argument("--backbone", default='default', type=str)
     parser.add_argument("--dataset", default="kather", type=str)
     parser.add_argument("--batch-size", default=128, type=int)
