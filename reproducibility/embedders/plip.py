@@ -2,9 +2,9 @@ import clip
 import tqdm
 import numpy as np
 import torch
-from embedders.internal_datasets import *
+from reproducibility.embedders.internal_datasets import *
 from torch.utils.data import DataLoader
-from utils.cacher import cache_hit_or_miss, cache_numpy_object, cache_hit_or_miss_raw_filename, cache_numpy_object_raw_filename
+from reproducibility.utils.cacher import cache_hit_or_miss, cache_numpy_object, cache_hit_or_miss_raw_filename, cache_numpy_object_raw_filename
 
 class CLIPEmbedder:
 

@@ -1,19 +1,13 @@
-from comet_ml import Experiment
 from torch import nn
 from torch import optim
 import clip
 import tqdm
 import numpy as np
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 import torch
-import math
-from torch.optim.lr_scheduler import LinearLR
-from embedders.internal_datasets import CLIPImageCaptioningDataset, CLIPCaptioningDataset, CLIPImageDataset, CLIPImageLabelDataset
-from embedders.transform import _train_transform
-from embedders.scheduler import cosine_lr
+from reproducibility.embedders.internal_datasets import CLIPImageLabelDataset
+from reproducibility.embedders.scheduler import cosine_lr
 import pandas as pd
 from torch.utils.data import DataLoader
-from PIL import Image
 from datetime import datetime
 from torch.cuda.amp import autocast
 

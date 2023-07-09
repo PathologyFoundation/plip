@@ -1,5 +1,5 @@
 from sklearn.linear_model import SGDClassifier
-from metrics import eval_metrics
+from reproducibility.metrics import eval_metrics
 import numpy as np
 from typing import List
 from sklearn.preprocessing import LabelEncoder

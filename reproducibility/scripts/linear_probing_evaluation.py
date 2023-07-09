@@ -1,16 +1,16 @@
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
 import logging
-from embedders.factory import EmbedderFactory
-from evaluation.linear_probing.linear_classifier import LinearProber
+from reproducibility.embedders.factory import EmbedderFactory
+from reproducibility.evaluation.linear_probing.linear_classifier import LinearProber
 import pandas as pd
 from dotenv import load_dotenv
 import os
 import numpy as np
-from utils.results_handler import ResultsHandler
+from reproducibility.utils.results_handler import ResultsHandler
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def config():

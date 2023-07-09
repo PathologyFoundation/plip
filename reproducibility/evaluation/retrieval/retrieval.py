@@ -1,4 +1,4 @@
-from metrics import retrieval_metrics
+from reproducibility.metrics import retrieval_metrics
 import logging
 
 class ImageRetrieval:

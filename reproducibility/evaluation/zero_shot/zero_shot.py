@@ -1,6 +1,5 @@
 import numpy as np
-from embedders.abst import AbstractEmbedder
-from metrics import eval_metrics
+from reproducibility.metrics import eval_metrics
 import logging
 
 class ZeroShotClassifier:

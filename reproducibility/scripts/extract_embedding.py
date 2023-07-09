@@ -1,32 +1,21 @@
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
-import logging
-from embedders.factory import EmbedderFactory
 import pandas as pd
 from dotenv import load_dotenv
 import os
 opj=os.path.join
-from collections import Counter
-from comet_ml import Experiment
-from torch import nn
-from torch import optim
 import clip
 import tqdm
 import numpy as np
 import random
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 import torch
-import math
-from torch.optim.lr_scheduler import LinearLR
-from embedders.internal_datasets import CLIPImageCaptioningDataset, CLIPCaptioningDataset, CLIPImageDataset, CLIPImageLabelDataset
-from embedders.transform import _train_transform
-from embedders.scheduler import cosine_lr
+from reproducibility.embedders.internal_datasets import CLIPCaptioningDataset, CLIPImageDataset
+from reproducibility.embedders.transform import _train_transform
 from torch.utils.data import DataLoader
-from PIL import Image
-from datetime import datetime
+
 
 def image_embedder(model, preprocess, list_of_images, device="cuda", num_workers=1, batch_size=32):
     print('Generating image embedding ...')
@@ -136,7 +125,7 @@ if __name__ == "__main__":
     os.makedirs(savepath, exist_ok=True)
 
     # Open README.md file in write mode
-    with open(opj(savepath, '..', 'README.md'), 'w') as readme_file:
+    with open(opj(savepath, '../..', 'README.md'), 'w') as readme_file:
         # Write your desired content
         readme_file.write('# Note\n\n')
         readme_file.write('The image and text embeddings are saved in numpy binary files (```.npy```). The order of the embeddings corresponds to their associated ```.csv``` files.\n')
