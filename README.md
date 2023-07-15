@@ -11,6 +11,23 @@ PLIP is the first vision and language foundation model for Pathology AI.
 - [Preprint](https://www.biorxiv.org/content/10.1101/2023.03.29.534834v1)
 
 
+### Internal API Usage
+
+```python
+    from plip.plip import PLIP
+    import numpy as np
+    
+    plip = PLIP('vinid/plip')
+    
+    # we create image embeddings and text embeddings
+    image_embeddings = plip.encode_images(images, batch_size=32)
+    text_embeddings = plip.encode_text(texts, batch_size=32)
+    
+    # we normalize the embeddings to unit norm (so that we can use dot product instead of cosine similarity to do comparisons)
+    image_embeddings = image_embeddings/np.linalg.norm(image_embeddings, ord=2, axis=-1, keepdims=True)
+    text_embeddings = text_embeddings/np.linalg.norm(text_embeddings, ord=2, axis=-1, keepdims=True)
+```
+
 ### HuggingFace API Usage
 
 ```python
