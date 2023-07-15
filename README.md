@@ -1,14 +1,16 @@
 # Pathology Language and Image Pre-Training (PLIP)
 
-PLIP is the first vision and language foundation model for Pathology AI. 
+Pathology Language and Image Pre-Training (PLIP) is the first vision and language foundation model for Pathology AI. PLIP is a large-scale pre-trained model that can be used to extract visual and language features from pathology images and text description.
+The model is a fine-tuned version of the original CLIP model.
+
 
 ![PLIP](assets/banner.png "A visual–language foundation model for pathology AI")
 
 
-## Links
-- [Official huggingface website](https://huggingface.co/spaces/vinid/webplip)
-- [PLIP model (huggingface transformers)](https://huggingface.co/vinid/plip)
-- [Preprint](https://www.biorxiv.org/content/10.1101/2023.03.29.534834v1)
+## Resources
+- 📚 [Official Demo](https://huggingface.co/spaces/vinid/webplip)
+- 📚 [PLIP on HuggingFace](https://huggingface.co/vinid/plip)
+- 📚 [Paper](https://www.biorxiv.org/content/10.1101/2023.03.29.534834v1)
 
 
 ### Internal API Usage
@@ -32,24 +34,38 @@ PLIP is the first vision and language foundation model for Pathology AI.
 
 ```python
 
-from PIL import Image
-import requests
-from transformers import CLIPProcessor, CLIPModel
-
-model = CLIPModel.from_pretrained("vinid/plip")
-processor = CLIPProcessor.from_pretrained("vinid/plip")
-
-image = Image.open("images/image1.jpg")
-
-inputs = processor(text=["a photo of label 1", "a photo of label 2"],
-                   images=image, return_tensors="pt", padding=True)
-
-outputs = model(**inputs)
-logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
-probs = logits_per_image.softmax(dim=1)  
-print(probs)
-image.resize((224, 224))
-
+    from PIL import Image
+    from transformers import CLIPProcessor, CLIPModel
+    
+    model = CLIPModel.from_pretrained("vinid/plip")
+    processor = CLIPProcessor.from_pretrained("vinid/plip")
+    
+    image = Image.open("images/image1.jpg")
+    
+    inputs = processor(text=["a photo of label 1", "a photo of label 2"],
+                       images=image, return_tensors="pt", padding=True)
+    
+    outputs = model(**inputs)
+    logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+    probs = logits_per_image.softmax(dim=1)  
+    print(probs)
+    image.resize((224, 224))
 
 ```
 
+### Citation
+
+If you use PLIP in your research, please cite the following paper:
+
+```bibtex
+  @article{huang2023leveraging,
+      title={Leveraging medical Twitter to build a visual--language foundation model for pathology AI},
+      author={Huang, Zhi and Bianchi, Federico and Yuksekgonul, Mert and Montine, Thomas and Zou, James},
+      journal={bioRxiv},
+      pages={2023--03},
+      year={2023}}
+```
+
+### Acknowledgements
+
+The internal API has been **copied** from FashionCLIP.
