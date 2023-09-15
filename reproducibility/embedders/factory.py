@@ -1,9 +1,9 @@
 import torch
 import clip
-from embedders.plip import CLIPEmbedder
-from embedders.mudipath import build_densenet
+from reproducibility.embedders.plip import CLIPEmbedder
+from reproducibility.embedders.mudipath import build_densenet
 from torchvision import transforms
-from embedders.mudipath import DenseNetEmbedder
+from reproducibility.embedders.mudipath import DenseNetEmbedder
 import os
 
 

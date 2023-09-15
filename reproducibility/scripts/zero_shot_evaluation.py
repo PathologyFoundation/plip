@@ -1,19 +1,20 @@
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
 import numpy as np
 import logging
-from embedders.factory import EmbedderFactory
-from evaluation.zero_shot.zero_shot import ZeroShotClassifier
+from reproducibility.embedders.factory import EmbedderFactory
+from reproducibility.evaluation.zero_shot.zero_shot import ZeroShotClassifier
 import pandas as pd
 
 from dotenv import load_dotenv
 import os
-from utils.results_handler import ResultsHandler
+from reproducibility.utils.results_handler import ResultsHandler
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-from PIL import Image
+
+
 def config():
     load_dotenv("../config.env")
 

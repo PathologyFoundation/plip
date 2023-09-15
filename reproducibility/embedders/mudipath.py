@@ -2,8 +2,8 @@ import os
 import re
 import sys
 from abc import abstractmethod
-from utils.cacher import cache_hit_or_miss, cache_numpy_object
-from embedders.internal_datasets import CLIPImageDataset
+from reproducibility.utils.cacher import cache_hit_or_miss, cache_numpy_object
+from reproducibility.embedders.internal_datasets import CLIPImageDataset
 from torch.utils.data import DataLoader
 from torch.utils import model_zoo
 from torchvision.models.resnet import ResNet, model_urls as resnet_urls, BasicBlock, Bottleneck

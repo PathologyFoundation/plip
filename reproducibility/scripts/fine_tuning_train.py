@@ -1,11 +1,10 @@
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 import argparse
 import logging
 import time
-from embedders.factory import EmbedderFactory
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
@@ -13,7 +12,7 @@ import os
 opj = os.path.join
 import glob
 import numpy as np
-from utils.results_handler import ResultsHandler
+
 
 def torch_init(random_seed):
     torch.cuda.empty_cache()
@@ -38,7 +37,7 @@ def convert_dataset_labels(args, df):
 def tune_model(args, train, valid, test=None, logging=None):
     # re-initialize torch at every training.
     torch_init(args.random_seed)
-    from fine_tuning.finetune import FineTuner
+    from reproducibility.fine_tuning.finetune import FineTuner
     if args.model_name == 'clip':
         backbone = None
     elif args.model_name == "plip":
