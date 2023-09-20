@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     save_filename = opj(savedir, '%s.csv' % backbone)
 
-    train_perf, test_perf = results
+    test_perf, train_perf = results
     train_perf = pd.DataFrame(train_perf, index=[0])
     test_perf = pd.DataFrame(test_perf, index=[1])
     perf = pd.concat([train_perf, test_perf], axis=0)

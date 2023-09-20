@@ -10,7 +10,7 @@ The model is a fine-tuned version of the original CLIP model.
 ## Resources
 - 📚 [Official Demo](https://huggingface.co/spaces/vinid/webplip)
 - 📚 [PLIP on HuggingFace](https://huggingface.co/vinid/plip)
-- 📚 [Paper](https://www.biorxiv.org/content/10.1101/2023.03.29.534834v1)
+- 📚 [Paper](https://www.nature.com/articles/s41591-023-02504-3)
 
 
 ### Internal API Usage
@@ -58,12 +58,14 @@ The model is a fine-tuned version of the original CLIP model.
 If you use PLIP in your research, please cite the following paper:
 
 ```bibtex
-  @article{huang2023leveraging,
-      title={Leveraging medical Twitter to build a visual--language foundation model for pathology AI},
-      author={Huang, Zhi and Bianchi, Federico and Yuksekgonul, Mert and Montine, Thomas and Zou, James},
-      journal={bioRxiv},
-      pages={2023--03},
-      year={2023}}
+    @article{huang2023visual,
+    title={A visual--language foundation model for pathology image analysis using medical Twitter},
+    author={Huang, Zhi and Bianchi, Federico and Yuksekgonul, Mert and Montine, Thomas J and Zou, James},
+    journal={Nature Medicine},
+    pages={1--10},
+    year={2023},
+    publisher={Nature Publishing Group US New York}
+}
 ```
 
 ### Acknowledgements

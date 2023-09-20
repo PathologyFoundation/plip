@@ -30,8 +30,8 @@ class LinearProber:
         test_pred = classifier.predict(test_x)
         train_pred = classifier.predict(train_x)
 
-        test_metrics = eval_metrics(test_y, test_pred)
-        train_metrics = eval_metrics(train_y, train_pred)
+        test_metrics = eval_metrics(test_y, test_pred, average_method="macro")
+        train_metrics = eval_metrics(train_y, train_pred, average_method="macro")
         test_metrics["split"] = "test"
         train_metrics["split"] = "train"
 
